@@ -5,8 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "tsc && vite build",
-    "start": "node dist/server.js"
+    "build": "tsc -p tsconfig.server.json && vite build",
+    "start": "node dist/server.js",
+    "preview": "vite preview",
+    "seed": "tsx prisma/seed.ts",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "postinstall": "prisma generate",
+    "lint": "tsc --noEmit"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
