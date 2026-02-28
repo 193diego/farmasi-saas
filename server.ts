@@ -33,37 +33,37 @@ async function startServer() {
     });
   }
 
-  // Ruta para verificar que el servidor está vivo
+  // Health: Render usa esto
   app.get("/api/health", (req, res) => {
     res.json({
       status: "ok",
       message: "Farmasi SaaS API running",
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toISOString()
     });
   });
 
   // API
   app.use("/api", apiRoutes);
 
-  // ================================
-  // SERVIR FRONTEND EN PRODUCCIÓN
-  // ================================
+  // ====================================
+  // 🔥 SERVIR FRONTEND EN PRODUCCIÓN
+  // ====================================
   if (process.env.NODE_ENV === "production") {
-    const distPath = path.join(__dirname, "dist");
+    const clientPath = path.join(__dirname, "client");
 
-    console.log("Sirviendo frontend desde:", distPath);
+    console.log("Sirviendo frontend desde:", clientPath);
 
-    app.use(express.static(distPath));
+    app.use(express.static(clientPath));
 
+    // Cualquier ruta no API → index.html
     app.get("*", (req, res) => {
-      if (req.path.startsWith("/api"))
+      if (req.path.startsWith("/api")) {
         return res.status(404).json({ message: "Ruta no encontrada" });
-
-      res.sendFile(path.join(distPath, "index.html"));
+      }
+      res.sendFile(path.join(clientPath, "index.html"));
     });
   }
 
-  // Iniciar servidor
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Farmasi SaaS corriendo en http://localhost:${PORT}`);
     console.log(`📊 Entorno: ${process.env.NODE_ENV || "development"}`);

@@ -8,18 +8,20 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+
     define: {
       "process.env.GEMINI_API_KEY": JSON.stringify(env.GEMINI_API_KEY),
     },
+
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
       },
     },
 
-    // ⚠️ Muy importante para Render
+    // NECESARIO PARA RENDER
     build: {
-      outDir: "dist",          // Render necesita dist/index.html
+      outDir: "dist/client",   // 🔥 Render + server.ts usan este path
       emptyOutDir: true,
       sourcemap: false
     }
