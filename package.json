@@ -6,9 +6,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build",
-    "start": "node dist-server/server.js",
-    "build:server": "tsc --project tsconfig.server.json",
-    "build:full": "npm run build && npm run build:server",
+    "start": "tsx server.ts",
     "preview": "vite preview",
     "seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
