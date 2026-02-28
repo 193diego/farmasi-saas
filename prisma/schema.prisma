@@ -1,0 +1,235 @@
+// prisma/schema.prisma
+// SCHEMA COMPLETO FARMASI SAAS - POSTGRESQL (Render)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Plan {
+  id               Int       @id @default(autoincrement())
+  nombre_plan      String
+  precio           Float
+  limite_usuarios  Int
+  limite_productos Int
+  companies        Company[]
+}
+
+model Company {
+  id                Int                     @id @default(autoincrement())
+  nombre_empresa    String
+  plan_id           Int
+  plan              Plan                    @relation(fields: [plan_id], references: [id])
+  estado            String                  @default("activo")
+  fecha_vencimiento DateTime
+  fecha_creacion    DateTime                @default(now())
+  users             User[]
+  inventario        InventarioEmpresa[]
+  clientes          Cliente[]
+  ventas            Venta[]
+  gastos            Gasto[]
+  proveedoras       Proveedora[]
+  consignaciones    Consignacion[]
+  liquidaciones     LiquidacionProveedora[]
+  ventas_consignacion VentaConsignacion[]
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  company_id     Int
+  company        Company  @relation(fields: [company_id], references: [id])
+  nombre         String
+  email          String   @unique
+  password       String
+  rol            String   @default("empleado") // super_admin, owner, empleado
+  activo         Boolean  @default(true)
+  fecha_creacion DateTime @default(now())
+}
+
+model ProductoGlobal {
+  id              Int                 @id @default(autoincrement())
+  nombre_producto String
+  categoria       String
+  descripcion     String?
+  marca           String?
+  codigo_base     String              @unique
+  imagen_url      String?
+  activo          Boolean             @default(true)
+  fecha_creacion  DateTime            @default(now())
+  inventarios     InventarioEmpresa[]
+  detalles_venta  DetalleVenta[]
+  consignaciones  Consignacion[]
+}
+
+model InventarioEmpresa {
+  id                  Int            @id @default(autoincrement())
+  company_id          Int
+  company             Company        @relation(fields: [company_id], references: [id])
+  producto_global_id  Int
+  producto            ProductoGlobal @relation(fields: [producto_global_id], references: [id])
+  stock               Int            @default(0)
+  precio_compra       Float
+  precio_venta        Float
+  fecha_actualizacion DateTime       @updatedAt
+
+  @@unique([company_id, producto_global_id])
+}
+
+model Cliente {
+  id              Int      @id @default(autoincrement())
+  company_id      Int
+  company         Company  @relation(fields: [company_id], references: [id])
+  nombre          String
+  telefono        String?
+  direccion       String?
+  saldo_pendiente Float    @default(0)
+  fecha_creacion  DateTime @default(now())
+  ventas          Venta[]
+}
+
+model Venta {
+  id                  Int               @id @default(autoincrement())
+  company_id          Int
+  company             Company           @relation(fields: [company_id], references: [id])
+  cliente_id          Int?
+  cliente             Cliente?          @relation(fields: [cliente_id], references: [id])
+  total               Float
+  monto_pagado        Float             @default(0)
+  estado              String            @default("pagado") // pagado, parcial, fiado
+  fecha_venta         DateTime          @default(now())
+  detalles            DetalleVenta[]
+  cuenta_cobrar       CuentaPorCobrar?
+  ventas_consignacion VentaConsignacion[]
+}
+
+model DetalleVenta {
+  id                  Int                @id @default(autoincrement())
+  venta_id            Int
+  venta               Venta              @relation(fields: [venta_id], references: [id])
+  producto_global_id  Int
+  producto            ProductoGlobal     @relation(fields: [producto_global_id], references: [id])
+  cantidad            Int
+  precio_unitario     Float
+  subtotal            Float
+  descuento           Float              @default(0)
+  venta_consignacion  VentaConsignacion?
+}
+
+model CuentaPorCobrar {
+  id                Int      @id @default(autoincrement())
+  venta_id          Int      @unique
+  venta             Venta    @relation(fields: [venta_id], references: [id])
+  monto_pendiente   Float
+  fecha_vencimiento DateTime
+  estado            String   @default("pendiente") // pendiente, pagado, mora
+  pagos             Pago[]
+}
+
+model Pago {
+  id           Int             @id @default(autoincrement())
+  cuenta_id    Int
+  cuenta       CuentaPorCobrar @relation(fields: [cuenta_id], references: [id])
+  monto_pagado Float
+  fecha_pago   DateTime        @default(now())
+}
+
+model Gasto {
+  id           Int      @id @default(autoincrement())
+  company_id   Int
+  company      Company  @relation(fields: [company_id], references: [id])
+  tipo_gasto   String
+  descripcion  String?
+  monto        Float
+  fecha_gasto  DateTime @default(now())
+}
+
+// ============================================================
+// MODELOS DE CONSIGNACION
+// ============================================================
+
+model Proveedora {
+  id             Int                     @id @default(autoincrement())
+  company_id     Int
+  company        Company                 @relation(fields: [company_id], references: [id])
+  nombre         String
+  telefono       String?
+  email          String?
+  notas          String?
+  activo         Boolean                 @default(true)
+  fecha_creacion DateTime                @default(now())
+  consignaciones Consignacion[]
+  liquidaciones  LiquidacionProveedora[]
+  ventas_consignacion VentaConsignacion[]
+}
+
+model Consignacion {
+  id                      Int                  @id @default(autoincrement())
+  company_id              Int
+  company                 Company              @relation(fields: [company_id], references: [id])
+  proveedora_id           Int
+  proveedora              Proveedora           @relation(fields: [proveedora_id], references: [id])
+  producto_global_id      Int
+  producto                ProductoGlobal       @relation(fields: [producto_global_id], references: [id])
+  cantidad_recibida       Int
+  cantidad_disponible     Int
+  precio_costo            Float
+  precio_venta_proveedora Float
+  precio_venta_tuyo       Float
+  estado                  String               @default("activo") // activo, liquidado, devuelto
+  fecha_recepcion         DateTime             @default(now())
+  fecha_actualizacion     DateTime             @updatedAt
+  notas                   String?
+  ventas_consignacion     VentaConsignacion[]
+  detalles_liquidacion    DetalleLiquidacion[]
+}
+
+model VentaConsignacion {
+  id                 Int          @id @default(autoincrement())
+  consignacion_id    Int
+  consignacion       Consignacion @relation(fields: [consignacion_id], references: [id])
+  company_id         Int
+  company            Company      @relation(fields: [company_id], references: [id])
+  proveedora_id      Int
+  proveedora         Proveedora   @relation(fields: [proveedora_id], references: [id])
+  venta_id           Int
+  venta              Venta        @relation(fields: [venta_id], references: [id])
+  detalle_venta_id   Int          @unique
+  detalle_venta      DetalleVenta @relation(fields: [detalle_venta_id], references: [id])
+  cantidad_vendida   Int
+  precio_venta_usado Float
+  precio_proveedora  Float
+  monto_a_reportar   Float
+  tu_ganancia        Float
+  liquidada          Boolean      @default(false)
+  fecha_venta        DateTime     @default(now())
+}
+
+model LiquidacionProveedora {
+  id             Int                  @id @default(autoincrement())
+  company_id     Int
+  company        Company              @relation(fields: [company_id], references: [id])
+  proveedora_id  Int
+  proveedora     Proveedora           @relation(fields: [proveedora_id], references: [id])
+  monto_total    Float
+  monto_pagado   Float                @default(0)
+  estado         String               @default("pendiente") // pendiente, parcial, pagado
+  fecha_corte    DateTime
+  fecha_pago     DateTime?
+  notas          String?
+  fecha_creacion DateTime             @default(now())
+  detalles       DetalleLiquidacion[]
+}
+
+model DetalleLiquidacion {
+  id                 Int                   @id @default(autoincrement())
+  liquidacion_id     Int
+  liquidacion        LiquidacionProveedora @relation(fields: [liquidacion_id], references: [id])
+  consignacion_id    Int
+  consignacion       Consignacion          @relation(fields: [consignacion_id], references: [id])
+  ventas_incluidas   Int
+  monto_consignacion Float
+}

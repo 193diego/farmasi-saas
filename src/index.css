@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Lato", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Montserrat", sans-serif;
+
+  --color-primary: #F45B69;
+  --color-secondary: #FAD4D8;
+  --color-background-custom: #FFF8F6;
+  --color-text-primary: #2E2E2E;
+  --color-text-secondary: #6B6B6B;
+  --color-accent: #C9A227;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-background-custom text-text-primary font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-semibold;
+  }
+}
+
+/* Custom scrollbar for a feminine elegant look */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FFF8F6;
+}
+::-webkit-scrollbar-thumb {
+  background: #FAD4D8;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #F45B69;
+}

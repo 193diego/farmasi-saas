@@ -1,0 +1,5 @@
+{
+  "name": "Farmasi SaaS Manager",
+  "description": "Sistema SaaS multi-tenant profesional para gestión de inventario, ventas, fiados y clientes con dashboard inteligente y semaforización.",
+  "requestFramePermissions": []
+}
