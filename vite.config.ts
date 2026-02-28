@@ -13,11 +13,15 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "."),
+        "@": path.resolve(__dirname, "./src"),
       },
     },
+
+    // ⚠️ Muy importante para Render
     build: {
-      outDir: "dist/client"
+      outDir: "dist",          // Render necesita dist/index.html
+      emptyOutDir: true,
+      sourcemap: false
     }
   };
 });
