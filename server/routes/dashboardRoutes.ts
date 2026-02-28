@@ -1,6 +1,6 @@
 import { Router } from "express";
-import * as dashboardController from "../controllers/dashboardController";
-import { authenticateToken, authorizeRoles } from "../middlewares/auth";
+import * as dashboardController from "../controllers/dashboardController.js";
+import { authenticateToken, authorizeRoles } from "../middlewares/auth.js";
 
 const router = Router();
 
@@ -8,3 +8,4 @@ router.get("/financials", authenticateToken, dashboardController.getAdminFinanci
 router.get("/super-admin/stats", authenticateToken, authorizeRoles("super_admin"), dashboardController.getSuperAdminStats);
 
 export default router;
+

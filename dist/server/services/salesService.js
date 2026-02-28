@@ -1,5 +1,5 @@
-import * as salesRepository from "../repositories/salesRepository";
-import prisma from "../prisma";
+import * as salesRepository from "../repositories/salesRepository.js";
+import prisma from "../prisma.js";
 export const createSale = async (companyId, data) => {
     return await prisma.$transaction(async (tx) => {
         // 1. Create the sale

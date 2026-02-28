@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as dashboardService from "../services/dashboardService";
+import * as dashboardService from "../services/dashboardService.js";
 
 export const getAdminFinancials = async (req: Request, res: Response) => {
   try {
@@ -20,3 +20,4 @@ export const getSuperAdminStats = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+

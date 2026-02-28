@@ -1,4 +1,4 @@
-import prisma from "../prisma";
+import prisma from "../prisma.js";
 export const getInventoryByCompany = async (companyId) => {
     return await prisma.inventarioEmpresa.findMany({
         where: { company_id: companyId },

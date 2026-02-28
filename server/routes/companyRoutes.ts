@@ -1,6 +1,6 @@
 import { Router } from "express";
-import * as companyController from "../controllers/companyController";
-import { authenticateToken, authorizeRoles } from "../middlewares/auth";
+import * as companyController from "../controllers/companyController.js";
+import { authenticateToken, authorizeRoles } from "../middlewares/auth.js";
 
 const router = Router();
 
@@ -9,3 +9,4 @@ router.get("/", authenticateToken, authorizeRoles("super_admin"), companyControl
 router.get("/plans", authenticateToken, companyController.getPlans);
 
 export default router;
+

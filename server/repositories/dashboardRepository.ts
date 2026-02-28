@@ -1,4 +1,4 @@
-import prisma from "../prisma";
+import prisma from "../prisma.js";
 
 export const getFinancialStats = async (companyId: number) => {
   const sales = await prisma.venta.findMany({
@@ -26,3 +26,4 @@ export const getSuperAdminStats = async () => {
   
   return { companies, totalIncome };
 };
+

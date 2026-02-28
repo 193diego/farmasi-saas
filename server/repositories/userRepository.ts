@@ -1,4 +1,4 @@
-import prisma from "../prisma";
+import prisma from "../prisma.js";
 
 export const findUserByEmail = async (email: string) => {
   return await prisma.user.findUnique({
@@ -19,3 +19,4 @@ export const findUserById = async (id: number) => {
     include: { company: true }
   });
 };
+

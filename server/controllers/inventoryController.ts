@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as inventoryService from "../services/inventoryService";
+import * as inventoryService from "../services/inventoryService.js";
 
 export const getInventory = async (req: Request, res: Response) => {
   try {
@@ -23,3 +23,4 @@ export const updateStock = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+

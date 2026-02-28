@@ -1,7 +1,7 @@
 // server/routes/expenseRoutes.ts
 import { Router } from "express";
-import { authenticateToken } from "../middlewares/auth";
-import prisma from "../prisma";
+import { authenticateToken } from "../middlewares/auth.js";
+import prisma from "../prisma.js";
 
 const router = Router();
 
@@ -54,3 +54,4 @@ router.post("/", authenticateToken, async (req: any, res) => {
 });
 
 export default router;
+

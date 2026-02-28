@@ -1,4 +1,4 @@
-import * as consignacionService from "../services/consignacionService";
+import * as consignacionService from "../services/consignacionService.js";
 // ---- PROVEEDORAS ----
 export const getProveedoras = async (req, res) => {
     try {

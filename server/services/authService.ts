@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import * as userRepository from "../repositories/userRepository";
+import * as userRepository from "../repositories/userRepository.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "farmasi-secret-key";
 
@@ -35,3 +35,4 @@ export const login = async (email: string, password: string) => {
     }
   };
 };
+

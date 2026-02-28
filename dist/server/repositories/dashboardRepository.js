@@ -1,4 +1,4 @@
-import prisma from "../prisma";
+import prisma from "../prisma.js";
 export const getFinancialStats = async (companyId) => {
     const sales = await prisma.venta.findMany({
         where: { company_id: companyId },

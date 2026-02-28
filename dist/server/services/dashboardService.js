@@ -1,4 +1,4 @@
-import * as dashboardRepository from "../repositories/dashboardRepository";
+import * as dashboardRepository from "../repositories/dashboardRepository.js";
 export const getAdminDashboardData = async (companyId) => {
     const { sales, expenses, inventory } = await dashboardRepository.getFinancialStats(companyId);
     const totalSales = sales.reduce((sum, s) => sum + s.total, 0);

@@ -1,4 +1,4 @@
-import prisma from "../prisma";
+import prisma from "../prisma.js";
 
 export const createSale = async (data: any) => {
   return await prisma.venta.create({
@@ -43,3 +43,4 @@ export const getSalesByCompany = async (companyId: number) => {
     }
   });
 };
+

@@ -1,7 +1,7 @@
 // server/routes/consignacionRoutes.ts
 import { Router } from "express";
-import * as ctrl from "../controllers/consignacionController";
-import { authenticateToken } from "../middlewares/auth";
+import * as ctrl from "../controllers/consignacionController.js";
+import { authenticateToken } from "../middlewares/auth.js";
 
 const router = Router();
 
@@ -21,3 +21,4 @@ router.post("/liquidar/:proveedoraId", authenticateToken, ctrl.crearLiquidacion)
 router.patch("/pago/:liquidacionId",   authenticateToken, ctrl.registrarPago);
 
 export default router;
+

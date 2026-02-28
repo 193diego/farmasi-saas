@@ -1,8 +1,8 @@
 // server/routes/reportRoutes.ts
 // Todos los reportes que puede generar la app desde la BD real
 import { Router } from "express";
-import { authenticateToken } from "../middlewares/auth";
-import prisma from "../prisma";
+import { authenticateToken } from "../middlewares/auth.js";
+import prisma from "../prisma.js";
 
 const router = Router();
 
@@ -492,3 +492,4 @@ router.get("/tendencias", authenticateToken, async (req: any, res) => {
 });
 
 export default router;
+

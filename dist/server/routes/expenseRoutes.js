@@ -1,7 +1,7 @@
 // server/routes/expenseRoutes.ts
 import { Router } from "express";
-import { authenticateToken } from "../middlewares/auth";
-import prisma from "../prisma";
+import { authenticateToken } from "../middlewares/auth.js";
+import prisma from "../prisma.js";
 const router = Router();
 // GET /api/expenses
 router.get("/", authenticateToken, async (req, res) => {

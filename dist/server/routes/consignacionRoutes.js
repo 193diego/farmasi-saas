@@ -1,7 +1,7 @@
 // server/routes/consignacionRoutes.ts
 import { Router } from "express";
-import * as ctrl from "../controllers/consignacionController";
-import { authenticateToken } from "../middlewares/auth";
+import * as ctrl from "../controllers/consignacionController.js";
+import { authenticateToken } from "../middlewares/auth.js";
 const router = Router();
 // Proveedoras
 router.get("/proveedoras", authenticateToken, ctrl.getProveedoras);

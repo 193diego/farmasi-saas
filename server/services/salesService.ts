@@ -1,6 +1,6 @@
-import * as salesRepository from "../repositories/salesRepository";
-import * as inventoryRepository from "../repositories/inventoryRepository";
-import prisma from "../prisma";
+import * as salesRepository from "../repositories/salesRepository.js";
+import * as inventoryRepository from "../repositories/inventoryRepository.js";
+import prisma from "../prisma.js";
 
 export const createSale = async (companyId: number, data: any) => {
   return await prisma.$transaction(async (tx) => {
@@ -90,3 +90,4 @@ export const getSales = async (companyId: number) => {
     }))
   }));
 };
+

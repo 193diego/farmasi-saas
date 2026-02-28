@@ -1,4 +1,4 @@
-import * as inventoryRepository from "../repositories/inventoryRepository";
+import * as inventoryRepository from "../repositories/inventoryRepository.js";
 export const getInventory = async (companyId) => {
     const items = await inventoryRepository.getInventoryByCompany(companyId);
     return items.map(item => ({

@@ -1,4 +1,4 @@
-import * as dashboardService from "../services/dashboardService";
+import * as dashboardService from "../services/dashboardService.js";
 export const getAdminFinancials = async (req, res) => {
     try {
         const companyId = req.user.company_id;

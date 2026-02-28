@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as salesService from "../services/salesService";
+import * as salesService from "../services/salesService.js";
 
 export const createSale = async (req: Request, res: Response) => {
   try {
@@ -20,3 +20,4 @@ export const getSales = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+

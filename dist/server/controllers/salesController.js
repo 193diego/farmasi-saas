@@ -1,4 +1,4 @@
-import * as salesService from "../services/salesService";
+import * as salesService from "../services/salesService.js";
 export const createSale = async (req, res) => {
     try {
         const companyId = req.user.company_id;

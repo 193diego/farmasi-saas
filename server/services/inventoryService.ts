@@ -1,4 +1,4 @@
-import * as inventoryRepository from "../repositories/inventoryRepository";
+import * as inventoryRepository from "../repositories/inventoryRepository.js";
 
 export const getInventory = async (companyId: number) => {
   const items = await inventoryRepository.getInventoryByCompany(companyId);
@@ -16,3 +16,4 @@ export const getInventory = async (companyId: number) => {
 export const updateStock = async (id: number, stock: number) => {
   return await inventoryRepository.updateStock(id, stock);
 };
+

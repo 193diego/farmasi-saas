@@ -1,5 +1,5 @@
-import * as companyRepository from "../repositories/companyRepository";
-import prisma from "../prisma";
+import * as companyRepository from "../repositories/companyRepository.js";
+import prisma from "../prisma.js";
 
 export const createCompanyWithInventory = async (data: any) => {
   return await prisma.$transaction(async (tx) => {
@@ -40,3 +40,4 @@ export const getCompanies = async () => {
 export const getPlans = async () => {
   return await companyRepository.getPlans();
 };
+

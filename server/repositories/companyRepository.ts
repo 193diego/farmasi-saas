@@ -1,4 +1,4 @@
-import prisma from "../prisma";
+import prisma from "../prisma.js";
 
 export const createCompany = async (data: any) => {
   return await prisma.company.create({
@@ -25,3 +25,4 @@ export const getAllCompanies = async () => {
 export const getPlans = async () => {
   return await prisma.plan.findMany();
 };
+

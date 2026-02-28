@@ -1,4 +1,4 @@
-import * as inventoryService from "../services/inventoryService";
+import * as inventoryService from "../services/inventoryService.js";
 export const getInventory = async (req, res) => {
     try {
         const companyId = req.user.company_id;

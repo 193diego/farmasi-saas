@@ -1,7 +1,7 @@
 // server/routes/customerRoutes.ts
 import { Router } from "express";
-import { authenticateToken } from "../middlewares/auth";
-import prisma from "../prisma";
+import { authenticateToken } from "../middlewares/auth.js";
+import prisma from "../prisma.js";
 
 const router = Router();
 
@@ -74,3 +74,4 @@ router.patch("/:id/abono", authenticateToken, async (req: any, res) => {
 });
 
 export default router;
+

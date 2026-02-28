@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as companyService from "../services/companyService";
+import * as companyService from "../services/companyService.js";
 
 export const createCompany = async (req: Request, res: Response) => {
   try {
@@ -27,3 +27,4 @@ export const getPlans = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+

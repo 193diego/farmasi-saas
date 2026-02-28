@@ -1,4 +1,4 @@
-import * as companyService from "../services/companyService";
+import * as companyService from "../services/companyService.js";
 export const createCompany = async (req, res) => {
     try {
         const company = await companyService.createCompanyWithInventory(req.body);

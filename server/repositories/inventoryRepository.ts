@@ -1,4 +1,4 @@
-import prisma from "../prisma";
+import prisma from "../prisma.js";
 
 export const getInventoryByCompany = async (companyId: number) => {
   return await prisma.inventarioEmpresa.findMany({
@@ -19,3 +19,4 @@ export const createInventoryItem = async (data: any) => {
     data
   });
 };
+

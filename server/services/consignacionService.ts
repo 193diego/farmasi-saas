@@ -1,6 +1,6 @@
 // server/services/consignacionService.ts
-import * as repo from "../repositories/consignacionRepository";
-import prisma from "../prisma";
+import * as repo from "../repositories/consignacionRepository.js";
+import prisma from "../prisma.js";
 
 // ===================================================
 //  PROVEEDORAS

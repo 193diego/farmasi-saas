@@ -1,6 +1,6 @@
 // server/controllers/consignacionController.ts
 import { Request, Response } from "express";
-import * as consignacionService from "../services/consignacionService";
+import * as consignacionService from "../services/consignacionService.js";
 
 // ---- PROVEEDORAS ----
 
@@ -81,3 +81,4 @@ export const registrarPago = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
+

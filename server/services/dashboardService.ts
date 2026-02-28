@@ -1,4 +1,4 @@
-import * as dashboardRepository from "../repositories/dashboardRepository";
+import * as dashboardRepository from "../repositories/dashboardRepository.js";
 
 export const getAdminDashboardData = async (companyId: number) => {
   const { sales, expenses, inventory } = await dashboardRepository.getFinancialStats(companyId);
@@ -65,3 +65,4 @@ export const getSuperAdminDashboardData = async () => {
     ]
   };
 };
+

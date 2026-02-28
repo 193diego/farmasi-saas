@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as authService from "../services/authService";
+import * as authService from "../services/authService.js";
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -10,3 +10,4 @@ export const login = async (req: Request, res: Response) => {
     res.status(401).json({ message: error.message });
   }
 };
+

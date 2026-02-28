@@ -1,14 +1,14 @@
 // server/routes/index.ts
 import { Router } from "express";
-import authRoutes from "./authRoutes";
-import inventoryRoutes from "./inventoryRoutes";
-import salesRoutes from "./salesRoutes";
-import companyRoutes from "./companyRoutes";
-import dashboardRoutes from "./dashboardRoutes";
-import consignacionRoutes from "./consignacionRoutes";
-import customerRoutes from "./customerRoutes";
-import expenseRoutes from "./expenseRoutes";
-import reportRoutes from "./reportRoutes";
+import authRoutes from "./authRoutes.js";
+import inventoryRoutes from "./inventoryRoutes.js";
+import salesRoutes from "./salesRoutes.js";
+import companyRoutes from "./companyRoutes.js";
+import dashboardRoutes from "./dashboardRoutes.js";
+import consignacionRoutes from "./consignacionRoutes.js";
+import customerRoutes from "./customerRoutes.js";
+import expenseRoutes from "./expenseRoutes.js";
+import reportRoutes from "./reportRoutes.js";
 
 const router = Router();
 
@@ -23,3 +23,4 @@ router.use("/expenses", expenseRoutes);
 router.use("/reports", reportRoutes);
 
 export default router;
+

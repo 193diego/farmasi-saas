@@ -1,5 +1,5 @@
-import * as companyRepository from "../repositories/companyRepository";
-import prisma from "../prisma";
+import * as companyRepository from "../repositories/companyRepository.js";
+import prisma from "../prisma.js";
 export const createCompanyWithInventory = async (data) => {
     return await prisma.$transaction(async (tx) => {
         // 1. Crear la empresa
