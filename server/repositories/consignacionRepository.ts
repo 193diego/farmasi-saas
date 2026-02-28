@@ -1,7 +1,9 @@
 // server/repositories/consignacionRepository.ts
-import prisma from "../prisma.ts";
+import prisma from "../prisma";
 
-// ---- PROVEEDORAS ----
+// ===================================================
+//  PROVEEDORAS
+// ===================================================
 
 export const getProveedorasByCompany = async (companyId: number) => {
   return await prisma.proveedora.findMany({
@@ -29,7 +31,9 @@ export const updateProveedora = async (id: number, data: any) => {
   return await prisma.proveedora.update({ where: { id }, data });
 };
 
-// ---- CONSIGNACIONES ----
+// ===================================================
+//  CONSIGNACIONES
+// ===================================================
 
 export const getConsignacionesByCompany = async (companyId: number) => {
   return await prisma.consignacion.findMany({
@@ -37,7 +41,7 @@ export const getConsignacionesByCompany = async (companyId: number) => {
     include: {
       proveedora: true,
       producto: true,
-      ventas_consignacion: true
+      ventas_consignacion: true   // ✔ CORREGIDO: era ventaConsignacion
     },
     orderBy: { fecha_recepcion: "desc" }
   });
@@ -48,7 +52,7 @@ export const getConsignacionesByProveedora = async (companyId: number, proveedor
     where: { company_id: companyId, proveedora_id: proveedoraId },
     include: {
       producto: true,
-      ventas_consignacion: true
+      ventas_consignacion: true   // ✔ CORREGIDO: era ventaConsignacion
     },
     orderBy: { fecha_recepcion: "desc" }
   });
@@ -82,7 +86,6 @@ export const updateConsignacionStock = async (id: number, cantidadVendida: numbe
   });
 };
 
-// Busca consignaciones activas de un producto para una empresa
 export const findConsignacionActiva = async (companyId: number, productoGlobalId: number) => {
   return await prisma.consignacion.findFirst({
     where: {
@@ -95,10 +98,14 @@ export const findConsignacionActiva = async (companyId: number, productoGlobalId
   });
 };
 
-// ---- VENTAS CONSIGNACION ----
+// ===================================================
+//  VENTAS CONSIGNACION
+// ===================================================
 
 export const createVentaConsignacion = async (data: {
   consignacion_id: number;
+  company_id: number;        // ✔ AGREGADO: era requerido según el schema
+  proveedora_id: number;     // ✔ AGREGADO: era requerido según el schema
   venta_id: number;
   detalle_venta_id: number;
   cantidad_vendida: number;
@@ -113,10 +120,8 @@ export const createVentaConsignacion = async (data: {
 export const getVentasConsignacionByProveedora = async (companyId: number, proveedoraId: number) => {
   return await prisma.ventaConsignacion.findMany({
     where: {
-      consignacion: {
-        company_id: companyId,
-        proveedora_id: proveedoraId
-      }
+      company_id: companyId,       // ✔ CORREGIDO: query directa en lugar de nested
+      proveedora_id: proveedoraId  // ✔ CORREGIDO: query directa en lugar de nested
     },
     include: {
       consignacion: { include: { producto: true } },
@@ -126,26 +131,28 @@ export const getVentasConsignacionByProveedora = async (companyId: number, prove
   });
 };
 
-// ---- REPORTE / LIQUIDACION ----
+// ===================================================
+//  REPORTES Y LIQUIDACIONES
+// ===================================================
 
-// Calcula cuanto se le debe a una proveedora (ventas sin liquidar)
 export const calcularDeudaProveedora = async (companyId: number, proveedoraId: number) => {
   const ventas = await prisma.ventaConsignacion.findMany({
     where: {
-      consignacion: {
-        company_id: companyId,
-        proveedora_id: proveedoraId,
-        estado: "activo"
-      }
+      company_id: companyId,       // ✔ CORREGIDO: query directa
+      proveedora_id: proveedoraId, // ✔ CORREGIDO: query directa
+      liquidada: false
     },
     include: {
       consignacion: { include: { producto: true } }
     }
   });
 
-  const totalDeuda = ventas.reduce((sum, v) => sum + v.monto_a_reportar, 0);
-  const totalGanancia = ventas.reduce((sum, v) => sum + v.tu_ganancia, 0);
-  const totalVendido = ventas.reduce((sum, v) => sum + (v.precio_venta_usado * v.cantidad_vendida), 0);
+  const totalDeuda = ventas.reduce((sum: number, v) => sum + v.monto_a_reportar, 0);
+  const totalGanancia = ventas.reduce((sum: number, v) => sum + v.tu_ganancia, 0);
+  const totalVendido = ventas.reduce(
+    (sum: number, v) => sum + v.precio_venta_usado * v.cantidad_vendida,
+    0
+  );
 
   return { ventas, totalDeuda, totalGanancia, totalVendido };
 };
@@ -175,7 +182,11 @@ export const createLiquidacion = async (data: {
     },
     include: {
       proveedora: true,
-      detalles: { include: { consignacion: { include: { producto: true } } } }
+      detalles: {
+        include: {
+          consignacion: { include: { producto: true } }
+        }
+      }
     }
   });
 };
@@ -184,7 +195,11 @@ export const getLiquidacionesByProveedora = async (companyId: number, proveedora
   return await prisma.liquidacionProveedora.findMany({
     where: { company_id: companyId, proveedora_id: proveedoraId },
     include: {
-      detalles: { include: { consignacion: { include: { producto: true } } } }
+      detalles: {
+        include: {
+          consignacion: { include: { producto: true } }
+        }
+      }
     },
     orderBy: { fecha_creacion: "desc" }
   });
@@ -194,7 +209,7 @@ export const registrarPagoLiquidacion = async (liquidacionId: number, montoPagad
   const liquidacion = await prisma.liquidacionProveedora.findUnique({
     where: { id: liquidacionId }
   });
-  if (!liquidacion) throw new Error("Liquidacion no encontrada");
+  if (!liquidacion) throw new Error("Liquidación no encontrada");
 
   const nuevoPagado = liquidacion.monto_pagado + montoPagado;
   const nuevoEstado = nuevoPagado >= liquidacion.monto_total ? "pagado" : "parcial";

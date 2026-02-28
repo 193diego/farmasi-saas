@@ -1,11 +1,11 @@
 // server/routes/index.ts  (REEMPLAZA EL EXISTENTE)
 import { Router } from "express";
-import authRoutes from "./authRoutes.ts";
-import inventoryRoutes from "./inventoryRoutes.ts";
-import salesRoutes from "./salesRoutes.ts";
-import companyRoutes from "./companyRoutes.ts";
-import dashboardRoutes from "./dashboardRoutes.ts";
-import consignacionRoutes from "./consignacionRoutes.ts";  // NUEVO
+import authRoutes from "./authRoutes";
+import inventoryRoutes from "./inventoryRoutes";
+import salesRoutes from "./salesRoutes";
+import companyRoutes from "./companyRoutes";
+import dashboardRoutes from "./dashboardRoutes";
+import consignacionRoutes from "./consignacionRoutes";  // NUEVO
 
 const router = Router();
 

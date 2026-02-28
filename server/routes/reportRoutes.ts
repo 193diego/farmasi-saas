@@ -1,8 +1,8 @@
 // server/routes/reportRoutes.ts
 // Todos los reportes que puede generar la app desde la BD real
 import { Router } from "express";
-import { authenticateToken } from "../middlewares/auth.ts";
-import prisma from "../prisma.ts";
+import { authenticateToken } from "../middlewares/auth";
+import prisma from "../prisma";
 
 const router = Router();
 

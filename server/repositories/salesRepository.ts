@@ -1,4 +1,4 @@
-import prisma from "../prisma.ts";
+import prisma from "../prisma";
 
 export const createSale = async (data: any) => {
   return await prisma.venta.create({

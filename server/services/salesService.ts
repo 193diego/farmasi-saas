@@ -1,6 +1,6 @@
-import * as salesRepository from "../repositories/salesRepository.ts";
-import * as inventoryRepository from "../repositories/inventoryRepository.ts";
-import prisma from "../prisma.ts";
+import * as salesRepository from "../repositories/salesRepository";
+import * as inventoryRepository from "../repositories/inventoryRepository";
+import prisma from "../prisma";
 
 export const createSale = async (companyId: number, data: any) => {
   return await prisma.$transaction(async (tx) => {

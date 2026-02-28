@@ -1,7 +1,7 @@
 // server/routes/consignacionRoutes.ts
 import { Router } from "express";
-import * as ctrl from "../controllers/consignacionController.ts";
-import { authenticateToken } from "../middlewares/auth.ts";
+import * as ctrl from "../controllers/consignacionController";
+import { authenticateToken } from "../middlewares/auth";
 
 const router = Router();
 

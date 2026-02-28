@@ -1,4 +1,4 @@
-import prisma from "../prisma.ts";
+import prisma from "../prisma";
 
 export const getInventoryByCompany = async (companyId: number) => {
   return await prisma.inventarioEmpresa.findMany({

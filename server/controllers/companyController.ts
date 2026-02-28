@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as companyService from "../services/companyService.ts";
+import * as companyService from "../services/companyService";
 
 export const createCompany = async (req: Request, res: Response) => {
   try {

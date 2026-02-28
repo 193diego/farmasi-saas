@@ -1,6 +1,6 @@
 // server/controllers/consignacionController.ts
 import { Request, Response } from "express";
-import * as consignacionService from "../services/consignacionService.ts";
+import * as consignacionService from "../services/consignacionService";
 
 // ---- PROVEEDORAS ----
 

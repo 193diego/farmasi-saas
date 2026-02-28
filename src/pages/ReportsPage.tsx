@@ -10,8 +10,8 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronDown, Printer
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { api } from "../hooks/useApi.ts";
-import { exportTableToPDF, exportToCSV } from "../utils/print.ts";
+import { api } from "../hooks/useApi";
+import { exportTableToPDF, exportToCSV } from "../utils/print";
 
 const C = {
   primary: "#F45B69", soft: "#FAD4D8", bg: "#FFF8F6",

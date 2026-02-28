@@ -12,9 +12,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, Legend
 } from "recharts";
-import { api, getUser } from "./hooks/useApi.ts";
-import { printThermal, downloadTxt, exportTableToPDF, exportToCSV } from "./utils/print.ts";
-import ReportsPage from "./pages/ReportsPage.tsx";
+import { api, getUser } from "./hooks/useApi";
+import { printThermal, downloadTxt, exportTableToPDF, exportToCSV } from "./utils/print";
+import ReportsPage from "./pages/ReportsPage";
 
 // ─── FARMASI COLORS ──────────────────────────────────────────
 const C = {

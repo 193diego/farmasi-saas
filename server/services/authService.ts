@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import * as userRepository from "../repositories/userRepository.ts";
+import * as userRepository from "../repositories/userRepository";
 
 const JWT_SECRET = process.env.JWT_SECRET || "farmasi-secret-key";
 

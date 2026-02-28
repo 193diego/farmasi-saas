@@ -1,6 +1,6 @@
 import { Router } from "express";
-import * as salesController from "../controllers/salesController.ts";
-import { authenticateToken } from "../middlewares/auth.ts";
+import * as salesController from "../controllers/salesController";
+import { authenticateToken } from "../middlewares/auth";
 
 const router = Router();
 

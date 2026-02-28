@@ -1,4 +1,4 @@
-import * as dashboardRepository from "../repositories/dashboardRepository.ts";
+import * as dashboardRepository from "../repositories/dashboardRepository";
 
 export const getAdminDashboardData = async (companyId: number) => {
   const { sales, expenses, inventory } = await dashboardRepository.getFinancialStats(companyId);

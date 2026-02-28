@@ -1,7 +1,7 @@
 // server/routes/customerRoutes.ts
 import { Router } from "express";
-import { authenticateToken } from "../middlewares/auth.ts";
-import prisma from "../prisma.ts";
+import { authenticateToken } from "../middlewares/auth";
+import prisma from "../prisma";
 
 const router = Router();
 
