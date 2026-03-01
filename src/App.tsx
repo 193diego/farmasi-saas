@@ -17,7 +17,6 @@ import { printThermal, downloadTxt, exportTableToPDF, exportToCSV } from "./util
 import ReportsPage from "./pages/ReportsPage";
 // ✅ CAMBIO 1: Import del panel de super admin
 import SuperAdminPanel from "./pages/SuperAdminPanel";
-
 // ─── FARMASI COLORS ──────────────────────────────────────────
 const C = {
   primary:   "#F45B69",
