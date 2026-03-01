@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "farmasi_secret_key";
 export interface AuthRequest extends Request {
   user?: {
     id: number;
-    company_id: number;
+    company_id: number | null; // ✅ nullable para super_admin
     rol: string;
     nombre: string;
   };
@@ -33,4 +33,3 @@ export const authorizeRoles = (...roles: string[]) => {
     next();
   };
 };
-
