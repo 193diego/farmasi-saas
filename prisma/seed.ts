@@ -21,7 +21,43 @@ async function main() {
   });
   console.log(`✅ Planes creados: ${planes.count}`);
 
-  // ── 2. EMPRESA DEMO ────────────────────────────────────────
+  // ── 2. SUPER ADMIN ─────────────────────────────────────────
+  // ⚠️ El super_admin NO pertenece a ninguna empresa (company_id: null)
+  // Él es el administrador de la plataforma, no un usuario de cliente.
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || "admin@farmasi.com";
+  const superAdminPass  = process.env.SUPER_ADMIN_PASS  || "farmasi2024";
+
+  const existeAdmin = await prisma.user.findUnique({ where: { email: superAdminEmail } });
+
+  if (!existeAdmin) {
+    const hashedPassword = await bcrypt.hash(superAdminPass, 10);
+    await prisma.user.create({
+      data: {
+        company_id: null,           // ✅ Sin empresa — es el dueño de la plataforma
+        nombre: "Super Administrador",
+        email: superAdminEmail,
+        password: hashedPassword,
+        rol: "super_admin",
+      }
+    });
+    console.log(`✅ Super Admin creado: ${superAdminEmail}`);
+    console.log(`   Contraseña inicial: ${superAdminPass}`);
+    console.log(`   ⚠️  Cámbiala desde el panel después del primer login`);
+  } else {
+    console.log(`ℹ️  Super Admin ya existe: ${superAdminEmail}`);
+
+    // 🔧 Parche: si el super_admin existente tiene company_id, lo limpiamos
+    if (existeAdmin.company_id !== null) {
+      await prisma.user.update({
+        where: { email: superAdminEmail },
+        data: { company_id: null },
+      });
+      console.log(`🔧 company_id del Super Admin limpiado a null`);
+    }
+  }
+
+  // ── 3. EMPRESA DEMO ────────────────────────────────────────
+  // Esta empresa sirve para que el owner de prueba pueda entrar al sistema
   let empresa = await prisma.company.findFirst({
     where: { nombre_empresa: "Mi Farmasi" }
   });
@@ -39,30 +75,6 @@ async function main() {
     console.log(`✅ Empresa demo creada: ${empresa.nombre_empresa}`);
   }
 
-  // ── 3. SUPER ADMIN ─────────────────────────────────────────
-  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || "admin@farmasi.com";
-  const superAdminPass  = process.env.SUPER_ADMIN_PASS  || "farmasi2024";
-
-  const existeAdmin = await prisma.user.findUnique({ where: { email: superAdminEmail } });
-
-  if (!existeAdmin) {
-    const hashedPassword = await bcrypt.hash(superAdminPass, 10);
-    await prisma.user.create({
-      data: {
-        company_id: empresa.id,
-        nombre: "Super Administrador",
-        email: superAdminEmail,
-        password: hashedPassword,
-        rol: "super_admin",
-      }
-    });
-    console.log(`✅ Super Admin creado: ${superAdminEmail}`);
-    console.log(`   Contraseña inicial: ${superAdminPass}`);
-    console.log(`   ⚠️  Cámbiala desde el panel después del primer login`);
-  } else {
-    console.log(`ℹ️  Super Admin ya existe: ${superAdminEmail}`);
-  }
-
   // ── 4. OWNER DE LA EMPRESA DEMO ───────────────────────────
   const ownerEmail = process.env.OWNER_EMAIL || "owner@mifarmasi.com";
   const ownerPass  = process.env.OWNER_PASS  || "owner2024";
@@ -73,7 +85,7 @@ async function main() {
     const hashedPassword = await bcrypt.hash(ownerPass, 10);
     await prisma.user.create({
       data: {
-        company_id: empresa.id,
+        company_id: empresa.id,     // ✅ El owner SÍ pertenece a una empresa
         nombre: "Dueña del Negocio",
         email: ownerEmail,
         password: hashedPassword,
@@ -87,22 +99,22 @@ async function main() {
   // ── 5. PRODUCTOS GLOBALES FARMASI (CATÁLOGO BASE) ─────────
   const productos = await prisma.productoGlobal.createMany({
     data: [
-      { nombre_producto: "Labial Matte",          categoria: "Maquillaje",    marca: "Farmasi",   codigo_base: "FAR-LM-001", descripcion: "Labial matte de larga duración en variedad de tonos" },
-      { nombre_producto: "Crema Hidratante",       categoria: "Cuidado Piel",  marca: "Dr. C. Tuna", codigo_base: "FAR-CH-001", descripcion: "Crema hidratante con ingredientes naturales" },
-      { nombre_producto: "Perfume Floral",         categoria: "Fragancias",    marca: "Farmasi",   codigo_base: "FAR-PF-001", descripcion: "Fragancia floral elegante" },
-      { nombre_producto: "Máscara de Pestañas",    categoria: "Maquillaje",    marca: "Farmasi",   codigo_base: "FAR-MP-001", descripcion: "Máscara voluminizadora y alargadora" },
+      { nombre_producto: "Labial Matte",          categoria: "Maquillaje",    marca: "Farmasi",     codigo_base: "FAR-LM-001",  descripcion: "Labial matte de larga duración en variedad de tonos" },
+      { nombre_producto: "Crema Hidratante",       categoria: "Cuidado Piel",  marca: "Dr. C. Tuna", codigo_base: "FAR-CH-001",  descripcion: "Crema hidratante con ingredientes naturales" },
+      { nombre_producto: "Perfume Floral",         categoria: "Fragancias",    marca: "Farmasi",     codigo_base: "FAR-PF-001",  descripcion: "Fragancia floral elegante" },
+      { nombre_producto: "Máscara de Pestañas",    categoria: "Maquillaje",    marca: "Farmasi",     codigo_base: "FAR-MP-001",  descripcion: "Máscara voluminizadora y alargadora" },
       { nombre_producto: "Sérum Vitamina C",       categoria: "Cuidado Piel",  marca: "Dr. C. Tuna", codigo_base: "FAR-SVC-001", descripcion: "Sérum iluminador con vitamina C" },
-      { nombre_producto: "Base Maquillaje",        categoria: "Maquillaje",    marca: "Farmasi",   codigo_base: "FAR-BM-001", descripcion: "Base de alta cobertura" },
-      { nombre_producto: "Sombras de Ojos",        categoria: "Maquillaje",    marca: "Farmasi",   codigo_base: "FAR-SO-001", descripcion: "Paleta de sombras multicolor" },
+      { nombre_producto: "Base Maquillaje",        categoria: "Maquillaje",    marca: "Farmasi",     codigo_base: "FAR-BM-001",  descripcion: "Base de alta cobertura" },
+      { nombre_producto: "Sombras de Ojos",        categoria: "Maquillaje",    marca: "Farmasi",     codigo_base: "FAR-SO-001",  descripcion: "Paleta de sombras multicolor" },
       { nombre_producto: "Crema Anti-Edad",        categoria: "Cuidado Piel",  marca: "Dr. C. Tuna", codigo_base: "FAR-CAE-001", descripcion: "Crema reductora de arrugas" },
-      { nombre_producto: "Shampoo Nutrición",      categoria: "Cabello",       marca: "Farmasi",   codigo_base: "FAR-SH-001", descripcion: "Shampoo nutritivo para cabello seco" },
-      { nombre_producto: "Perfume Oriental",       categoria: "Fragancias",    marca: "Farmasi",   codigo_base: "FAR-PO-001", descripcion: "Fragancia oriental intensa" },
+      { nombre_producto: "Shampoo Nutrición",      categoria: "Cabello",       marca: "Farmasi",     codigo_base: "FAR-SH-001",  descripcion: "Shampoo nutritivo para cabello seco" },
+      { nombre_producto: "Perfume Oriental",       categoria: "Fragancias",    marca: "Farmasi",     codigo_base: "FAR-PO-001",  descripcion: "Fragancia oriental intensa" },
     ],
     skipDuplicates: true,
   });
   console.log(`✅ Productos globales creados: ${productos.count}`);
 
-  // ── 6. INICIALIZAR INVENTARIO EN CERO ────────────────────
+  // ── 6. INICIALIZAR INVENTARIO DE LA EMPRESA DEMO EN CERO ──
   const todosProductos = await prisma.productoGlobal.findMany();
   const inventarioExistente = await prisma.inventarioEmpresa.findMany({
     where: { company_id: empresa.id }
@@ -125,12 +137,15 @@ async function main() {
   }
 
   console.log("\n🎉 Seed completado exitosamente!");
-  console.log("═══════════════════════════════════════");
-  console.log("📧 Super Admin:", superAdminEmail);
-  console.log("🔑 Contraseña: ", superAdminPass);
-  console.log("📧 Owner:      ", ownerEmail);
-  console.log("🔑 Contraseña: ", ownerPass);
-  console.log("═══════════════════════════════════════");
+  console.log("═══════════════════════════════════════════════════");
+  console.log("👑 SUPER ADMIN (plataforma, sin empresa)");
+  console.log("   📧 Email:     ", superAdminEmail);
+  console.log("   🔑 Contraseña:", superAdminPass);
+  console.log("───────────────────────────────────────────────────");
+  console.log("🏪 OWNER DEMO (empresa Mi Farmasi)");
+  console.log("   📧 Email:     ", ownerEmail);
+  console.log("   🔑 Contraseña:", ownerPass);
+  console.log("═══════════════════════════════════════════════════");
   console.log("⚠️  IMPORTANTE: Cambia las contraseñas después del primer login\n");
 }
 
