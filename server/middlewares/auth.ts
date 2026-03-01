@@ -6,20 +6,20 @@ const JWT_SECRET = process.env.JWT_SECRET || "farmasi_secret_key";
 export interface AuthRequest extends Request {
   user?: {
     id: number;
-    company_id: number | null; // ✅ nullable para super_admin
+    company_id: number | null;
     rol: string;
     nombre: string;
   };
 }
 
-export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = (req as Request).headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  if (!token) return res.status(401).json({ message: "Token no proporcionado" });
+  if (!token) return void res.status(401).json({ message: "Token no proporcionado" });
 
   jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
-    if (err) return res.status(403).json({ message: "Token inválido o expirado" });
+    if (err) return void res.status(403).json({ message: "Token inválido o expirado" });
     req.user = user;
     next();
   });
@@ -28,7 +28,7 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
 export const authorizeRoles = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.rol)) {
-      return res.status(403).json({ message: "No tienes permisos para realizar esta acción" });
+      return void res.status(403).json({ message: "No tienes permisos para realizar esta acción" });
     }
     next();
   };
