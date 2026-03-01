@@ -15,6 +15,8 @@ import {
 import { api, getUser } from "./hooks/useApi";
 import { printThermal, downloadTxt, exportTableToPDF, exportToCSV } from "./utils/print";
 import ReportsPage from "./pages/ReportsPage";
+// ✅ CAMBIO 1: Import del panel de super admin
+import SuperAdminPanel from "./pages/SuperAdminPanel";
 
 // ─── FARMASI COLORS ──────────────────────────────────────────
 const C = {
@@ -130,7 +132,6 @@ const Sidebar = ({ user, onLogout, mobileOpen, setMobileOpen }: any) => {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      {/* Logo */}
       <div className="px-6 py-5 border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-lg"
@@ -141,7 +142,6 @@ const Sidebar = ({ user, onLogout, mobileOpen, setMobileOpen }: any) => {
           </div>
         </div>
       </div>
-      {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {items.map(({ icon: Icon, label, path }) => {
           const active = loc.pathname === path || (path !== "/" && loc.pathname.startsWith(path));
@@ -155,7 +155,6 @@ const Sidebar = ({ user, onLogout, mobileOpen, setMobileOpen }: any) => {
           );
         })}
       </nav>
-      {/* User */}
       <div className="px-4 py-4 border-t border-white/10">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
@@ -177,12 +176,10 @@ const Sidebar = ({ user, onLogout, mobileOpen, setMobileOpen }: any) => {
 
   return (
     <>
-      {/* Desktop */}
       <aside className="hidden lg:flex flex-col w-60 flex-shrink-0 h-screen sticky top-0"
         style={{ background: `linear-gradient(180deg, #e04050, ${C.primary} 40%, #d63548)` }}>
         <SidebarContent />
       </aside>
-      {/* Mobile */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -208,7 +205,6 @@ const Layout = ({ children, user, onLogout, cartCount, onOpenCart }: any) => {
     <div className="flex h-screen overflow-hidden" style={{ background: C.bg }}>
       <Sidebar user={user} onLogout={onLogout} mobileOpen={mob} setMobileOpen={setMob} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top bar */}
         <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between flex-shrink-0 shadow-sm">
           <button onClick={() => setMob(true)} className="lg:hidden p-2 rounded-xl hover:bg-gray-100">
             <Menu className="w-5 h-5 text-gray-600" />
@@ -257,7 +253,6 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: C.bg }}>
       <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm bg-white rounded-3xl shadow-xl overflow-hidden">
-        {/* Header */}
         <div className="px-8 pt-10 pb-8 text-center" style={{ background: GRADIENT }}>
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <span className="text-white font-black text-3xl">F</span>
@@ -265,7 +260,6 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
           <h1 className="text-white font-black text-2xl">FARMASI</h1>
           <p className="text-white/80 text-sm mt-1">Sistema de Gestión</p>
         </div>
-        {/* Form */}
         <form onSubmit={submit} className="p-8 space-y-4">
           {error && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-700 text-sm">
@@ -427,7 +421,6 @@ const DashboardPage = ({ sales, products, expenses, customers }: any) => {
   const totalFiado = sales.filter((v: Sale) => v.status === "fiado").reduce((s: number, v: Sale) => s + (v.total - v.paidAmount), 0);
   const agotados = products.filter((p: Product) => p.stock === 0).length;
 
-  // Ventas últimos 7 días
   const chart7d = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date(Date.now() - (6 - i) * 86400000);
     const key = d.toISOString().split("T")[0];
@@ -438,7 +431,6 @@ const DashboardPage = ({ sales, products, expenses, customers }: any) => {
     };
   });
 
-  // Categorías
   const catData = products.reduce((acc: any, p: Product) => {
     const existing = acc.find((a: any) => a.name === p.categoria);
     if (existing) existing.value += p.stock * p.precio_venta;
@@ -453,17 +445,13 @@ const DashboardPage = ({ sales, products, expenses, customers }: any) => {
         <h1 className="text-2xl font-black" style={{ color: C.text }}>Dashboard</h1>
         <p className="text-sm mt-0.5" style={{ color: C.textSub }}>Resumen del negocio en tiempo real</p>
       </div>
-
-      {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPI title="Ventas Totales" value={`$${totalIngresos.toFixed(0)}`} icon={TrendingUp} color="primary" delay={0} trend={12} />
         <KPI title="Ganancia Neta" value={`$${ganancia.toFixed(0)}`} icon={DollarSign} color={ganancia >= 0 ? "emerald" : "rose"} delay={0.05} trend={ganancia > 0 ? 8 : -5} />
         <KPI title="Total Fiado" value={`$${totalFiado.toFixed(0)}`} icon={CreditCard} color="amber" delay={0.1} />
         <KPI title="Inv. Invertido" value={`$${invValue.toFixed(0)}`} icon={Package} color="gold" delay={0.15} />
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Gráfica ventas */}
         <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
           <h3 className="font-bold mb-5" style={{ color: C.text }}>Ventas Últimos 7 Días</h3>
           <ResponsiveContainer width="100%" height={200}>
@@ -483,8 +471,6 @@ const DashboardPage = ({ sales, products, expenses, customers }: any) => {
             </AreaChart>
           </ResponsiveContainer>
         </div>
-
-        {/* Inventario por cat */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
           <h3 className="font-bold mb-5" style={{ color: C.text }}>Inventario por Categoría</h3>
           {catData.length > 0 ? (
@@ -517,8 +503,6 @@ const DashboardPage = ({ sales, products, expenses, customers }: any) => {
           )}
         </div>
       </div>
-
-      {/* Alertas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {agotados > 0 && (
           <div className="bg-white border border-rose-100 rounded-2xl p-5 flex items-start gap-4">
@@ -543,8 +527,6 @@ const DashboardPage = ({ sales, products, expenses, customers }: any) => {
           </div>
         )}
       </div>
-
-      {/* Últimas ventas */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-bold" style={{ color: C.text }}>Últimas Ventas</h3>
@@ -601,7 +583,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
 
-  // Modales
   const [modals, setModals] = useState({ customer: false, expense: false, product: false, proveedora: false, consignacion: false });
   const m = (k: string, v: boolean) => setModals(p => ({ ...p, [k]: v }));
 
@@ -610,9 +591,9 @@ export default function App() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  // Cargar datos
+  // ✅ CAMBIO 2: loadData solo corre si NO es super_admin
   const loadData = useCallback(async () => {
-    if (!user) return;
+    if (!user || user.rol === "super_admin") return;
     setLoading(true);
     try {
       const [inv, s, c, e, p, cons] = await Promise.allSettled([
@@ -702,7 +683,6 @@ export default function App() {
         items: cart.map(i => ({ productId: i.id, name: i.nombre, quantity: i.quantity, price: i.precio_venta })),
       }, ...prev]);
 
-      // Bajar stock localmente
       setProducts(prev => prev.map(p => {
         const ci = cart.find(c => c.id === p.id);
         return ci ? { ...p, stock: Math.max(0, p.stock - ci.quantity) } : p;
@@ -716,18 +696,23 @@ export default function App() {
     }
   };
 
+  // ── Sin sesión → Login
   if (!user) return <LoginPage onLogin={setUser} />;
 
+  // ✅ CAMBIO 3: Super admin → su propio panel (NO ve ventas ni inventario)
+  if (user.rol === "super_admin") {
+    return <SuperAdminPanel user={user} onLogout={logout} />;
+  }
+
+  // ── Owner / Empleado → App normal de ventas
   return (
     <Router>
       <Layout user={user} onLogout={logout} cartCount={cart.length} onOpenCart={() => setCartOpen(true)}>
         <Routes>
-          {/* DASHBOARD */}
           <Route path="/" element={
             <DashboardPage sales={sales} products={products} expenses={expenses} customers={customers} />
           } />
 
-          {/* INVENTARIO */}
           <Route path="/inventario" element={
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -799,7 +784,6 @@ export default function App() {
             </div>
           } />
 
-          {/* VENTAS */}
           <Route path="/ventas" element={
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -877,7 +861,6 @@ export default function App() {
             </div>
           } />
 
-          {/* CLIENTES */}
           <Route path="/clientes" element={
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -930,7 +913,6 @@ export default function App() {
             </div>
           } />
 
-          {/* FIADOS */}
           <Route path="/fiados" element={
             <div className="space-y-6">
               <div>
@@ -967,7 +949,6 @@ export default function App() {
             </div>
           } />
 
-          {/* GASTOS */}
           <Route path="/gastos" element={
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1003,7 +984,6 @@ export default function App() {
             </div>
           } />
 
-          {/* CONSIGNACION */}
           <Route path="/consignacion" element={
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1020,7 +1000,6 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              {/* Resumen proveedoras */}
               {proveedoras.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {proveedoras.map((p: Proveedora) => {
@@ -1052,7 +1031,6 @@ export default function App() {
                   })}
                 </div>
               )}
-              {/* Detalle consignaciones */}
               {consignaciones.length === 0 ? (
                 <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
                   <Layers className="w-12 h-12 mx-auto mb-3" style={{ color: C.soft }} />
@@ -1101,7 +1079,6 @@ export default function App() {
             </div>
           } />
 
-          {/* REPORTES */}
           <Route path="/reportes" element={
             <ReportsPage sales={sales} products={products} expenses={expenses} customers={customers} />
           } />
@@ -1110,7 +1087,6 @@ export default function App() {
         </Routes>
       </Layout>
 
-      {/* Carrito flotante */}
       {cart.length > 0 && !cartOpen && (
         <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} whileTap={{ scale: 0.95 }}
           onClick={() => setCartOpen(true)}
@@ -1128,7 +1104,6 @@ export default function App() {
         onRemove={(id: number) => setCart(p => p.filter(i => i.id !== id))}
         onCheckout={checkout} empresa={user?.nombre || "Farmasi"} />
 
-      {/* Modales */}
       <Modal isOpen={modals.customer} onClose={() => m("customer", false)} title="Nueva Cliente">
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault();
