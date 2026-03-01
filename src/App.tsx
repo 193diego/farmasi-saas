@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, CreditCard, TrendingDown,
@@ -826,6 +826,199 @@ const DashboardPage = ({ sales, products, expenses, customers }: any) => {
   );
 };
 
+// ─── CATEGORÍAS FARMASI ───────────────────────────────────────
+const CATEGORIAS_FARMASI = [
+  "Maquillaje", "Cuidado Piel", "Fragancias", "Cabello",
+  "Cuidado Personal", "Suplementos", "Uñas", "Protección Solar",
+  "Hombre", "Bebé y Niños", "Otros",
+];
+
+// ─── MODAL AGREGAR / EDITAR PRODUCTO ─────────────────────────
+// El owner NO crea productos globales — eso lo hace el super_admin.
+// El owner configura: precio_venta, precio_compra, stock e imagen
+// de los productos que ya existen en su inventario (creados por super_admin).
+const ProductModal = ({ isOpen, onClose, products, onSaved, showToast }: any) => {
+  const [selectedId, setSelectedId] = useState<number | "">("");
+  const [form, setForm] = useState({ precio_venta: "", precio_compra: "", stock: "", imagen_url: "" });
+  const [saving, setSaving] = useState(false);
+  const [imgMode, setImgMode] = useState<"url" | "file">("url");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Cuando selecciona un producto, pre-rellena los valores actuales
+  const selected = products.find((p: Product) => p.id === Number(selectedId));
+  useEffect(() => {
+    if (selected) {
+      setForm({
+        precio_venta: selected.precio_venta?.toString() || "",
+        precio_compra: selected.precio_compra?.toString() || "",
+        stock: selected.stock?.toString() || "",
+        imagen_url: selected.imagen_url || "",
+      });
+    } else {
+      setForm({ precio_venta: "", precio_compra: "", stock: "", imagen_url: "" });
+    }
+  }, [selectedId]);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setForm(p => ({ ...p, imagen_url: ev.target?.result as string }));
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedId) return showToast("Selecciona un producto", "error");
+    if (!form.precio_venta || !form.stock) return showToast("Precio de venta y stock son obligatorios", "error");
+    setSaving(true);
+    try {
+      const updated = await api.updateProduct(Number(selectedId), {
+        precio_venta: Number(form.precio_venta),
+        precio_compra: Number(form.precio_compra) || 0,
+        stock: Number(form.stock),
+        imagen_url: form.imagen_url || null,
+      });
+      onSaved({ ...selected, ...updated });
+    } catch (err: any) {
+      showToast(err.message || "Error al actualizar", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Agrupar productos por categoría para el select
+  const grouped = CATEGORIAS_FARMASI.reduce((acc: any, cat) => {
+    const items = products.filter((p: Product) => p.categoria === cat);
+    if (items.length > 0) acc[cat] = items;
+    return acc;
+  }, {});
+  const sinCategoria = products.filter((p: Product) => !CATEGORIAS_FARMASI.includes(p.categoria));
+  if (sinCategoria.length > 0) grouped["Otros"] = [...(grouped["Otros"] || []), ...sinCategoria];
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Configurar Producto">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl">
+          <p className="text-xs text-blue-700 font-medium">
+            Selecciona un producto del catálogo y configura tu precio, stock e imagen.
+          </p>
+        </div>
+
+        {/* Select agrupado por categoría */}
+        <div>
+          <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>
+            Producto *
+          </label>
+          <select
+            value={selectedId}
+            onChange={e => setSelectedId(e.target.value === "" ? "" : Number(e.target.value))}
+            required className={inputCls}
+          >
+            <option value="">— Selecciona un producto —</option>
+            {Object.entries(grouped).map(([cat, items]: any) => (
+              <optgroup key={cat} label={`── ${cat}`}>
+                {items.map((p: Product) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre} {p.stock > 0 ? `(${p.stock} en stock)` : "(sin stock)"}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+
+        {selected && (
+          <>
+            {/* Preview del producto seleccionado */}
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0" style={{ background: C.soft }}>
+                {form.imagen_url ? (
+                  <img src={form.imagen_url} alt={selected.nombre} className="w-full h-full object-cover"
+                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                ) : (
+                  <Package className="w-6 h-6 m-3" style={{ color: C.primary }} />
+                )}
+              </div>
+              <div>
+                <p className="font-bold text-sm" style={{ color: C.text }}>{selected.nombre}</p>
+                <p className="text-xs" style={{ color: C.textSub }}>{selected.categoria}</p>
+              </div>
+            </div>
+
+            {/* Precios y stock */}
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>
+                  Precio Venta *
+                </label>
+                <input type="number" step="0.01" min="0" required
+                  value={form.precio_venta}
+                  onChange={e => setForm(p => ({ ...p, precio_venta: e.target.value }))}
+                  className={inputCls} placeholder="0.00" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>
+                  Precio Costo
+                </label>
+                <input type="number" step="0.01" min="0"
+                  value={form.precio_compra}
+                  onChange={e => setForm(p => ({ ...p, precio_compra: e.target.value }))}
+                  className={inputCls} placeholder="0.00" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>
+                  Stock
+                </label>
+                <input type="number" min="0" required
+                  value={form.stock}
+                  onChange={e => setForm(p => ({ ...p, stock: e.target.value }))}
+                  className={inputCls} placeholder="0" />
+              </div>
+            </div>
+
+            {/* Imagen */}
+            <div>
+              <label className="block text-xs font-bold uppercase mb-2" style={{ color: C.textSub }}>
+                Imagen del producto
+              </label>
+              <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-2">
+                <button type="button" onClick={() => setImgMode("url")}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${imgMode === "url" ? "bg-white shadow text-gray-800" : "text-gray-500"}`}>
+                  URL
+                </button>
+                <button type="button" onClick={() => setImgMode("file")}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${imgMode === "file" ? "bg-white shadow text-gray-800" : "text-gray-500"}`}>
+                  Subir archivo
+                </button>
+              </div>
+              {imgMode === "url" ? (
+                <input value={form.imagen_url} onChange={e => setForm(p => ({ ...p, imagen_url: e.target.value }))}
+                  className={inputCls} placeholder="https://ejemplo.com/imagen.jpg" />
+              ) : (
+                <>
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+                  <button type="button" onClick={() => fileRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed text-sm font-bold"
+                    style={{ borderColor: C.soft, color: C.primary }}>
+                    <Download className="w-4 h-4" /> Seleccionar imagen
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        <button type="submit" disabled={saving || !selectedId}
+          className="w-full py-3.5 rounded-xl text-white font-bold text-sm hover:opacity-90 disabled:opacity-50 transition-all"
+          style={{ background: GRADIENT }}>
+          {saving ? "Guardando..." : "Guardar Configuración"}
+        </button>
+      </form>
+    </Modal>
+  );
+};
+
 // ─── MAIN APP ─────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState<User | null>(() => {
@@ -1424,6 +1617,19 @@ export default function App() {
           <button className="w-full py-3 rounded-xl text-white font-bold text-sm bg-rose-500 hover:bg-rose-600">Guardar Gasto</button>
         </form>
       </Modal>
+
+      {/* ─── MODAL AGREGAR / EDITAR PRODUCTO ───────────────────── */}
+      <ProductModal
+        isOpen={modals.product}
+        onClose={() => m("product", false)}
+        products={products}
+        onSaved={(updated: Product) => {
+          setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
+          m("product", false);
+          showToast("Producto actualizado ✓");
+        }}
+        showToast={showToast}
+      />
 
       <Modal isOpen={modals.proveedora} onClose={() => m("proveedora", false)} title="Nueva Proveedora">
         <form className="space-y-4" onSubmit={async (e) => {

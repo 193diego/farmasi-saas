@@ -29,6 +29,46 @@ router.get(
   }
 );
 
+
+router.patch(
+  "/product",
+  authenticateToken,
+  async (req: any, res) => {
+    try {
+      const { id, precio_venta, precio_compra, stock, imagen_url } = req.body;
+
+      const updated = await prisma.inventarioEmpresa.update({
+        where: { id: Number(id) },
+        data: {
+          ...(precio_venta !== undefined && { precio_venta: Number(precio_venta) }),
+          ...(precio_compra !== undefined && { precio_compra: Number(precio_compra) }),
+          ...(stock !== undefined && { stock: Number(stock) }),
+          ...(imagen_url !== undefined && {
+            producto: {
+              update: { imagen_url: imagen_url || null }
+            }
+          }),
+        },
+        include: { producto: true }
+      });
+
+      res.json({
+        id: updated.id,
+        stock: updated.stock,
+        precio_venta: updated.precio_venta,
+        precio_compra: updated.precio_compra,
+        imagen_url: updated.producto.imagen_url,
+      });
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  }
+);
+
+
+
+
+
 // ── POST /api/inventory/global  →  crear producto global (super_admin) ──
 router.post(
   "/global",

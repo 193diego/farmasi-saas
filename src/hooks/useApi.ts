@@ -42,8 +42,11 @@ export const api = {
 
   // Inventario
   getInventory: () => req("GET", "/inventory"),
-  updateStock:  (id: number, stock: number) =>
+  updateStock: (id: number, stock: number) =>
     req("PATCH", "/inventory/stock", { id, stock }),
+  // ✅ NUEVO: actualizar precio, stock e imagen de un producto del inventario
+  updateProduct: (id: number, data: { precio_venta: number; precio_compra: number; stock: number; imagen_url?: string | null }) =>
+    req("PATCH", "/inventory/product", { id, ...data }),
 
   // Ventas
   getSales: () => req("GET", "/sales"),
