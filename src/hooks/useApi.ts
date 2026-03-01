@@ -1,6 +1,4 @@
 // src/hooks/useApi.ts
-// Hook central para todas las llamadas a la API
-
 const BASE = "/api";
 
 export function getToken(): string {
@@ -44,9 +42,9 @@ export const api = {
   getInventory: () => req("GET", "/inventory"),
   updateStock: (id: number, stock: number) =>
     req("PATCH", "/inventory/stock", { id, stock }),
-  // ✅ NUEVO: actualizar precio, stock e imagen de un producto del inventario
-  updateProduct: (id: number, data: { precio_venta: number; precio_compra: number; stock: number; imagen_url?: string | null }) =>
-    req("PATCH", "/inventory/product", { id, ...data }),
+  // ✅ NUEVO: editar producto (stock + precios) con lápiz
+  updateInventoryItem: (id: number, data: { stock?: number; precio_venta?: number; precio_compra?: number }) =>
+    req("PATCH", `/inventory/${id}`, data),
 
   // Ventas
   getSales: () => req("GET", "/sales"),
@@ -95,4 +93,8 @@ export const api = {
   getReporteConsignaciones: () => req("GET", "/reports/consignaciones"),
   getTendencias: (dias?: number) =>
     req("GET", `/reports/tendencias${dias ? "?dias=" + dias : ""}`),
+
+  // Global products (super admin)
+  getGlobalProducts: () => req("GET", "/inventory/global"),
+  createGlobalProduct: (data: any) => req("POST", "/inventory/global", data),
 };

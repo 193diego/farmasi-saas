@@ -9,8 +9,49 @@ const router = Router();
 // ── GET /api/inventory  →  inventario de la empresa del usuario ──
 router.get("/", authenticateToken, inventoryController.getInventory);
 
-// ── PATCH /api/inventory/stock  →  actualizar stock ──
+// ── PATCH /api/inventory/stock  →  actualizar stock (legacy) ──
 router.patch("/stock", authenticateToken, inventoryController.updateStock);
+
+// ✅ NUEVO: PATCH /api/inventory/:id  →  editar stock, precio_venta, precio_compra
+router.patch("/:id", authenticateToken, async (req: any, res) => {
+  try {
+    const companyId = req.user.company_id;
+    if (!companyId) return res.status(403).json({ message: "Sin empresa asignada" });
+
+    const id = Number(req.params.id);
+    const { stock, precio_venta, precio_compra } = req.body;
+
+    // Verificar que el item pertenece a la empresa del usuario
+    const item = await prisma.inventarioEmpresa.findFirst({
+      where: { id, company_id: companyId }
+    });
+    if (!item) return res.status(404).json({ message: "Producto no encontrado" });
+
+    const updated = await prisma.inventarioEmpresa.update({
+      where: { id },
+      data: {
+        ...(stock !== undefined && { stock: Number(stock) }),
+        ...(precio_venta !== undefined && { precio_venta: Number(precio_venta) }),
+        ...(precio_compra !== undefined && { precio_compra: Number(precio_compra) }),
+      },
+      include: { producto: true }
+    });
+
+    res.json({
+      id: updated.id,
+      nombre: updated.producto.nombre_producto,
+      categoria: updated.producto.categoria,
+      stock: updated.stock,
+      precio_venta: updated.precio_venta,
+      precio_compra: updated.precio_compra,
+      imagen_url: updated.producto.imagen_url,
+      marca: updated.producto.marca,
+      descripcion: updated.producto.descripcion,
+    });
+  } catch (e: any) {
+    res.status(400).json({ message: e.message });
+  }
+});
 
 // ── GET /api/inventory/global  →  catálogo global (super_admin) ──
 router.get(
@@ -29,46 +70,6 @@ router.get(
   }
 );
 
-
-router.patch(
-  "/product",
-  authenticateToken,
-  async (req: any, res) => {
-    try {
-      const { id, precio_venta, precio_compra, stock, imagen_url } = req.body;
-
-      const updated = await prisma.inventarioEmpresa.update({
-        where: { id: Number(id) },
-        data: {
-          ...(precio_venta !== undefined && { precio_venta: Number(precio_venta) }),
-          ...(precio_compra !== undefined && { precio_compra: Number(precio_compra) }),
-          ...(stock !== undefined && { stock: Number(stock) }),
-          ...(imagen_url !== undefined && {
-            producto: {
-              update: { imagen_url: imagen_url || null }
-            }
-          }),
-        },
-        include: { producto: true }
-      });
-
-      res.json({
-        id: updated.id,
-        stock: updated.stock,
-        precio_venta: updated.precio_venta,
-        precio_compra: updated.precio_compra,
-        imagen_url: updated.producto.imagen_url,
-      });
-    } catch (e: any) {
-      res.status(400).json({ message: e.message });
-    }
-  }
-);
-
-
-
-
-
 // ── POST /api/inventory/global  →  crear producto global (super_admin) ──
 router.post(
   "/global",
@@ -78,7 +79,6 @@ router.post(
     try {
       const { nombre_producto, categoria, marca, codigo_base, descripcion, imagen_url } = req.body;
 
-      // Crear el producto global
       const producto = await prisma.$transaction(async (tx) => {
         const p = await tx.productoGlobal.create({
           data: {
@@ -92,7 +92,6 @@ router.post(
           },
         });
 
-        // Agregarlo al inventario de TODAS las empresas existentes en cero
         const companies = await tx.company.findMany({ select: { id: true } });
 
         if (companies.length > 0) {
@@ -113,7 +112,6 @@ router.post(
 
       res.status(201).json(producto);
     } catch (e: any) {
-      // Manejo especial para código duplicado
       if (e.code === "P2002") {
         return res.status(400).json({ message: "Ya existe un producto con ese código base" });
       }
