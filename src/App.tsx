@@ -5,7 +5,8 @@ import {
   LogOut, Menu, X, Plus, ArrowUpRight, ArrowDownRight, Trash2, Minus,
   CheckCircle2, DollarSign, BarChart3, AlertTriangle, FileText, Eye,
   UserPlus, Layers, Clock, CheckCircle, Info, TrendingUp, Calendar,
-  Target, Filter, Star, Activity, Printer, Download, RefreshCw
+  Target, Filter, Star, Activity, Printer, Download, RefreshCw, Sparkles,
+  Heart, Flower2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -15,8 +16,8 @@ import {
 import { api, getUser } from "./hooks/useApi";
 import { printThermal, downloadTxt, exportTableToPDF, exportToCSV } from "./utils/print";
 import ReportsPage from "./pages/ReportsPage";
-// ✅ CAMBIO 1: Import del panel de super admin
 import SuperAdminPanel from "./pages/SuperAdminPanel";
+
 // ─── FARMASI COLORS ──────────────────────────────────────────
 const C = {
   primary:   "#F45B69",
@@ -226,11 +227,35 @@ const Layout = ({ children, user, onLogout, cartCount, onOpenCart }: any) => {
   );
 };
 
-// ─── LOGIN ────────────────────────────────────────────────────
+// ─── LOGIN (REDISEÑADO) ───────────────────────────────────────
+const FloatingPetal = ({ style }: { style: React.CSSProperties }) => (
+  <motion.div
+    className="absolute pointer-events-none select-none"
+    style={style}
+    animate={{ y: [0, -18, 0], rotate: [0, 12, -8, 0], opacity: [0.5, 0.85, 0.5] }}
+    transition={{ duration: 5 + Math.random() * 4, repeat: Infinity, ease: "easeInOut" }}
+  >
+    🌸
+  </motion.div>
+);
+
 const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [focused, setFocused] = useState<string | null>(null);
+  const [showPass, setShowPass] = useState(false);
+
+  const petals = [
+    { top: "8%",  left: "6%",  fontSize: "1.6rem", opacity: 0.6 },
+    { top: "18%", right: "8%", fontSize: "2rem",   opacity: 0.5 },
+    { top: "55%", left: "4%",  fontSize: "1.2rem", opacity: 0.45 },
+    { top: "70%", right: "5%", fontSize: "1.8rem", opacity: 0.55 },
+    { top: "40%", left: "88%", fontSize: "1rem",   opacity: 0.4 },
+    { top: "85%", left: "12%", fontSize: "1.4rem", opacity: 0.5 },
+    { top: "30%", left: "2%",  fontSize: "0.9rem", opacity: 0.35 },
+    { top: "62%", right: "12%",fontSize: "1.1rem", opacity: 0.45 },
+  ];
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,41 +274,186 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: C.bg }}>
-      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm bg-white rounded-3xl shadow-xl overflow-hidden">
-        <div className="px-8 pt-10 pb-8 text-center" style={{ background: GRADIENT }}>
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-black text-3xl">F</span>
+    <div className="min-h-screen flex overflow-hidden" style={{
+      background: "linear-gradient(145deg, #1a0810 0%, #2d0f1a 35%, #3d1525 65%, #1a0810 100%)"
+    }}>
+      {/* Floating petals */}
+      {petals.map((p, i) => (
+        <FloatingPetal key={i} style={{ fontSize: p.fontSize, opacity: p.opacity, ...p }} />
+      ))}
+
+      {/* Left decorative panel */}
+      <div className="hidden lg:flex flex-col justify-between w-[52%] relative p-14 overflow-hidden">
+        {/* Soft glow blobs */}
+        <div className="absolute top-0 left-0 w-96 h-96 rounded-full opacity-20 blur-3xl"
+          style={{ background: "radial-gradient(circle, #F45B69, transparent)" }} />
+        <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full opacity-15 blur-3xl"
+          style={{ background: "radial-gradient(circle, #C9A227, transparent)" }} />
+
+        {/* Logo */}
+        <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-xl text-white"
+              style={{ background: "linear-gradient(135deg, #F45B69, #e8394a)" }}>F</div>
+            <span className="text-white font-black text-xl tracking-widest">FARMASI</span>
           </div>
-          <h1 className="text-white font-black text-2xl">FARMASI</h1>
-          <p className="text-white/80 text-sm mt-1">Sistema de Gestión</p>
+        </motion.div>
+
+        {/* Hero text */}
+        <div className="space-y-6">
+          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, type: "spring", damping: 20 }}>
+            <p className="text-[#F45B69] text-sm font-bold tracking-widest uppercase mb-4">Plataforma de gestión</p>
+            <h1 className="text-5xl font-black text-white leading-tight">
+              Tu negocio<br />
+              <span style={{ color: "#F45B69" }}>florece</span><br />
+              con Farmasi
+            </h1>
+          </motion.div>
+
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
+            className="text-white/50 text-base leading-relaxed max-w-sm">
+            Gestiona ventas, inventario, clientes y consignaciones desde un solo lugar diseñado para distribuidoras Farmasi.
+          </motion.p>
+
+          {/* Feature pills */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
+            className="flex flex-wrap gap-3 pt-2">
+            {["✦ Ventas rápidas", "✦ Control de fiados", "✦ Consignaciones", "✦ Reportes"].map((f, i) => (
+              <span key={i} className="px-3 py-1.5 rounded-full text-xs font-bold"
+                style={{ background: "rgba(244,91,105,0.15)", color: "#F45B69", border: "1px solid rgba(244,91,105,0.3)" }}>
+                {f}
+              </span>
+            ))}
+          </motion.div>
         </div>
-        <form onSubmit={submit} className="p-8 space-y-4">
-          {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-700 text-sm">
-              <AlertTriangle className="w-4 h-4 flex-shrink-0" />{error}
+
+        {/* Bottom quote */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}
+          className="flex items-center gap-3">
+          <Heart className="w-4 h-4 flex-shrink-0" style={{ color: "#F45B69" }} />
+          <p className="text-white/30 text-xs">Creado con amor para distribuidoras de belleza y cuidado personal</p>
+        </motion.div>
+      </div>
+
+      {/* Right: Login form */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative">
+        {/* Glassmorphism card */}
+        <motion.div
+          initial={{ opacity: 0, y: 30, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.3, type: "spring", damping: 22 }}
+          className="w-full max-w-sm"
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            backdropFilter: "blur(24px)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: "28px",
+            padding: "40px 36px",
+            boxShadow: "0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)"
+          }}
+        >
+          {/* Mobile logo */}
+          <div className="lg:hidden flex justify-center mb-8">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl text-white"
+              style={{ background: "linear-gradient(135deg, #F45B69, #e8394a)" }}>F</div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-white font-black text-2xl">Bienvenida 🌸</h2>
+            <p className="text-white/40 text-sm mt-1">Ingresa a tu panel de gestión</p>
+          </div>
+
+          <form onSubmit={submit} className="space-y-4">
+            <AnimatePresence>
+              {error && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="p-3 rounded-2xl flex items-center gap-2 text-sm"
+                  style={{ background: "rgba(244,91,105,0.15)", border: "1px solid rgba(244,91,105,0.3)", color: "#fca5a5" }}>
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />{error}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-bold uppercase mb-2 tracking-wider" style={{ color: "rgba(255,255,255,0.45)" }}>
+                Correo electrónico
+              </label>
+              <div className="relative">
+                <input
+                  type="email" required value={form.email}
+                  onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                  onFocus={() => setFocused("email")} onBlur={() => setFocused(null)}
+                  placeholder="tu@email.com"
+                  style={{
+                    width: "100%", padding: "13px 16px", borderRadius: "14px", fontSize: "14px",
+                    background: "rgba(255,255,255,0.08)",
+                    border: `1px solid ${focused === "email" ? "rgba(244,91,105,0.7)" : "rgba(255,255,255,0.12)"}`,
+                    color: "white", outline: "none", transition: "all 0.2s",
+                    boxShadow: focused === "email" ? "0 0 0 3px rgba(244,91,105,0.15)" : "none"
+                  }}
+                />
+              </div>
             </div>
-          )}
-          <div>
-            <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Correo</label>
-            <input type="email" required value={form.email}
-              onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-              className={inputCls} placeholder="tu@email.com" />
-          </div>
-          <div>
-            <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Contraseña</label>
-            <input type="password" required value={form.password}
-              onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-              className={inputCls} placeholder="••••••••" />
-          </div>
-          <button type="submit" disabled={loading}
-            className="w-full py-3 rounded-xl text-white font-bold text-sm transition-all hover:opacity-90 active:scale-95 mt-2"
-            style={{ background: GRADIENT }}>
-            {loading ? "Ingresando..." : "Ingresar"}
-          </button>
-        </form>
-      </motion.div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-xs font-bold uppercase mb-2 tracking-wider" style={{ color: "rgba(255,255,255,0.45)" }}>
+                Contraseña
+              </label>
+              <div className="relative">
+                <input
+                  type={showPass ? "text" : "password"} required value={form.password}
+                  onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                  onFocus={() => setFocused("pass")} onBlur={() => setFocused(null)}
+                  placeholder="••••••••"
+                  style={{
+                    width: "100%", padding: "13px 44px 13px 16px", borderRadius: "14px", fontSize: "14px",
+                    background: "rgba(255,255,255,0.08)",
+                    border: `1px solid ${focused === "pass" ? "rgba(244,91,105,0.7)" : "rgba(255,255,255,0.12)"}`,
+                    color: "white", outline: "none", transition: "all 0.2s",
+                    boxShadow: focused === "pass" ? "0 0 0 3px rgba(244,91,105,0.15)" : "none"
+                  }}
+                />
+                <button type="button" onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors">
+                  <Eye className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Submit */}
+            <motion.button
+              type="submit" disabled={loading}
+              whileTap={{ scale: 0.97 }}
+              className="w-full py-3.5 rounded-2xl font-black text-white text-sm transition-all relative overflow-hidden"
+              style={{
+                background: loading ? "rgba(244,91,105,0.5)" : "linear-gradient(135deg, #F45B69, #e8394a)",
+                boxShadow: loading ? "none" : "0 8px 32px rgba(244,91,105,0.45)",
+                marginTop: "8px"
+              }}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
+                    className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+                  Ingresando...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Ingresar
+                </span>
+              )}
+            </motion.button>
+          </form>
+
+          {/* Footer */}
+          <p className="text-center text-xs mt-6" style={{ color: "rgba(255,255,255,0.2)" }}>
+            Farmasi SaaS · Gestión para distribuidoras
+          </p>
+        </motion.div>
+      </div>
     </div>
   );
 };
@@ -329,7 +499,7 @@ const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, 
                   <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                     <label className="block text-xs font-bold uppercase mb-2" style={{ color: C.textSub }}>Asignar a Cliente</label>
                     <select value={custId} onChange={e => setCustId(e.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none" style={{ borderColor: C.gray200 }}>
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none">
                       <option value={0}>Consumidor Final</option>
                       {customers.map((c: Customer) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
@@ -568,9 +738,17 @@ const DashboardPage = ({ sales, products, expenses, customers }: any) => {
 // ─── MAIN APP ─────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState<User | null>(() => {
-    const u = localStorage.getItem("farmasi_user");
-    return u ? JSON.parse(u) : null;
+    try {
+      const u = localStorage.getItem("farmasi_user");
+      const parsed = u ? JSON.parse(u) : null;
+      // ✅ FIX: Validar que el usuario tenga los campos mínimos necesarios
+      if (!parsed?.token || !parsed?.rol) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
   });
+
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -590,9 +768,12 @@ export default function App() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  // ✅ CAMBIO 2: loadData solo corre si NO es super_admin
+  // ✅ FIX CRÍTICO: loadData solo corre si el usuario existe Y NO es super_admin
+  // El super_admin NO tiene company_id, así que llamar a estas APIs causaría error 500
   const loadData = useCallback(async () => {
-    if (!user || user.rol === "super_admin") return;
+    if (!user) return;
+    if (user.rol === "super_admin") return; // ← GUARD: super_admin no carga datos de empresa
+    
     setLoading(true);
     try {
       const [inv, s, c, e, p, cons] = await Promise.allSettled([
@@ -698,7 +879,7 @@ export default function App() {
   // ── Sin sesión → Login
   if (!user) return <LoginPage onLogin={setUser} />;
 
-  // ✅ CAMBIO 3: Super admin → su propio panel (NO ve ventas ni inventario)
+  // ✅ Super admin → su propio panel INMEDIATAMENTE, sin cargar datos de empresa
   if (user.rol === "super_admin") {
     return <SuperAdminPanel user={user} onLogout={logout} />;
   }
