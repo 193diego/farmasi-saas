@@ -40,8 +40,8 @@ model Company {
 
 model User {
   id             Int      @id @default(autoincrement())
-  company_id     Int
-  company        Company  @relation(fields: [company_id], references: [id])
+  company_id     Int?
+  company        Company?  @relation(fields: [company_id], references: [id])
   nombre         String
   email          String   @unique
   password       String
