@@ -21,7 +21,9 @@ async function req(method: string, path: string, body?: any) {
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  if (res.status === 401) {
+  // ✅ FIX: Solo redirigir si NO es la ruta de login
+  // Antes: cualquier 401 mostraba "Sesión expirada" incluso al hacer login
+  if (res.status === 401 && !path.includes("/auth/login")) {
     localStorage.removeItem("farmasi_token");
     localStorage.removeItem("farmasi_user");
     window.location.href = "/";
@@ -42,7 +44,7 @@ export const api = {
   getInventory: () => req("GET", "/inventory"),
   updateStock: (id: number, stock: number) =>
     req("PATCH", "/inventory/stock", { id, stock }),
-  // ✅ NUEVO: editar producto (stock + precios) con lápiz
+  // Editar producto completo (stock + precios)
   updateInventoryItem: (id: number, data: { stock?: number; precio_venta?: number; precio_compra?: number }) =>
     req("PATCH", `/inventory/${id}`, data),
 
