@@ -1,72 +1,70 @@
 import * as salesRepository from "../repositories/salesRepository.js";
-import * as inventoryRepository from "../repositories/inventoryRepository.js";
 import prisma from "../prisma.js";
 
 export const createSale = async (companyId: number, data: any) => {
   return await prisma.$transaction(async (tx) => {
-    // 1. Create the sale
+    // Calcular total con descuentos
+    const totalConDescuento = data.items.reduce((s: number, item: any) => {
+      const subtotal = item.precio_unitario * item.cantidad;
+      const descItem = item.descuento || 0;
+      return s + subtotal - descItem;
+    }, 0);
+    // Aplicar descuento global de factura si existe
+    const descuentoGlobal = Number(data.descuento_global) || 0;
+    const totalFinal = Math.max(0, totalConDescuento - descuentoGlobal);
+
     const sale = await tx.venta.create({
       data: {
         company_id: companyId,
-        cliente_id: data.cliente_id,
-        total: data.total,
-        estado: data.estado,
+        cliente_id: data.cliente_id || null,
+        total: totalFinal,
+        monto_pagado: Number(data.monto_pagado) || totalFinal,
+        estado: data.estado || "pagado",
         detalles: {
           create: data.items.map((item: any) => ({
+            // ✅ FIX CRÍTICO: producto_global_id viene resuelto desde el frontend
             producto_global_id: item.producto_global_id,
             cantidad: item.cantidad,
             precio_unitario: item.precio_unitario,
-            subtotal: item.subtotal
+            descuento: item.descuento || 0,
+            subtotal: (item.precio_unitario * item.cantidad) - (item.descuento || 0),
           }))
         }
       },
-      include: {
-        detalles: true
-      }
+      include: { detalles: true }
     });
 
-    // 2. Update stock for each item
+    // Descontar stock
     for (const item of data.items) {
-      const inventoryItem = await tx.inventarioEmpresa.findFirst({
-        where: {
-          company_id: companyId,
-          producto_global_id: item.producto_global_id
-        }
+      const invItem = await tx.inventarioEmpresa.findFirst({
+        where: { company_id: companyId, producto_global_id: item.producto_global_id }
       });
-
-      if (!inventoryItem || inventoryItem.stock < item.cantidad) {
-        throw new Error(`Stock insuficiente para el producto ID ${item.producto_global_id}`);
+      if (!invItem || invItem.stock < item.cantidad) {
+        throw new Error(`Stock insuficiente para producto ID ${item.producto_global_id}`);
       }
-
       await tx.inventarioEmpresa.update({
-        where: { id: inventoryItem.id },
-        data: {
-          stock: inventoryItem.stock - item.cantidad
-        }
+        where: { id: invItem.id },
+        data: { stock: invItem.stock - item.cantidad }
       });
     }
 
-    // 3. If it's a debt (fiado), update customer balance
+    // Si es fiado, actualizar saldo del cliente
     if (data.estado === "fiado" && data.cliente_id) {
-      const pendingAmount = data.total - (data.paidAmount || 0);
-      await tx.cliente.update({
-        where: { id: data.cliente_id },
-        data: {
-          saldo_pendiente: {
-            increment: pendingAmount
+      const pendiente = totalFinal - (Number(data.monto_pagado) || 0);
+      if (pendiente > 0) {
+        await tx.cliente.update({
+          where: { id: data.cliente_id },
+          data: { saldo_pendiente: { increment: pendiente } }
+        });
+        await tx.cuentaPorCobrar.create({
+          data: {
+            venta_id: sale.id,
+            monto_pendiente: pendiente,
+            fecha_vencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            estado: "pendiente"
           }
-        }
-      });
-
-      // Create account receivable
-      await tx.cuentaPorCobrar.create({
-        data: {
-          venta_id: sale.id,
-          monto_pendiente: pendingAmount,
-          fecha_vencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-          estado: "pendiente"
-        }
-      });
+        });
+      }
     }
 
     return sale;
@@ -76,18 +74,19 @@ export const createSale = async (companyId: number, data: any) => {
 export const getSales = async (companyId: number) => {
   const sales = await salesRepository.getSalesByCompany(companyId);
   return sales.map(sale => ({
-    id: `#V-${sale.id}`,
+    id: sale.id,
     customer: sale.cliente?.nombre || "Consumidor Final",
-    date: sale.fecha_venta.toISOString().split('T')[0],
+    date: sale.fecha_venta.toISOString().split("T")[0],
     total: sale.total,
+    monto_pagado: sale.monto_pagado,
     status: sale.estado,
-    items: sale.detalles.map(d => ({
+    items: sale.detalles.map((d: any) => ({
       productId: d.producto_global_id,
       name: d.producto.nombre_producto,
       quantity: d.cantidad,
       price: d.precio_unitario,
+      discount: d.descuento || 0,
       subtotal: d.subtotal
     }))
   }));
 };
-

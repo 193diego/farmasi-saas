@@ -5,7 +5,7 @@ import {
   LogOut, Menu, X, Plus, ArrowUpRight, ArrowDownRight, Trash2, Minus,
   CheckCircle2, DollarSign, BarChart3, AlertTriangle, Eye,
   UserPlus, Layers, Clock, CheckCircle, Info, TrendingUp,
-  Printer, Download, RefreshCw, Sparkles, Search, Pencil
+  Printer, Download, RefreshCw, Sparkles, Search, Pencil, Tag
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -17,7 +17,6 @@ import { printThermal, downloadTxt } from "./utils/print";
 import ReportsPage from "./pages/ReportsPage";
 import SuperAdminPanel from "./pages/SuperAdminPanel";
 
-// ─── COLORS ───────────────────────────────────────────────────
 const C = {
   primary: "#F45B69", soft: "#FAD4D8", bg: "#FFF8F6", text: "#2E2E2E",
   textSub: "#6B6B6B", gold: "#C9A227", white: "#FFFFFF",
@@ -26,8 +25,7 @@ const C = {
 const GRADIENT = `linear-gradient(135deg, ${C.primary}, #e8394a)`;
 const GRADIENT_SOFT = `linear-gradient(135deg, #fff5f6, #fff)`;
 
-// ─── TYPES ────────────────────────────────────────────────────
-interface Product { id: number; nombre: string; categoria: string; stock: number; precio_venta: number; precio_compra: number; imagen_url?: string; marca?: string; descripcion?: string; }
+interface Product { id: number; nombre: string; categoria: string; stock: number; precio_venta: number; precio_compra: number; imagen_url?: string; marca?: string; descripcion?: string; producto_global_id?: number; }
 interface CartItem extends Product { quantity: number; discount: number; }
 interface Customer { id: number; name: string; phone?: string; address?: string; saldo_pendiente: number; totalSpent: number; }
 interface User { id: number; company_id: number | null; rol: string; nombre: string; email: string; token: string; }
@@ -36,7 +34,6 @@ interface Expense { id: number; concept: string; description?: string; category:
 interface Proveedora { id: number; nombre: string; telefono?: string; email?: string; notas?: string; }
 interface ConsignacionItem { id: number; proveedora: { id: number; nombre: string }; producto: { id: number; nombre: string; imagen_url?: string }; cantidad_recibida: number; cantidad_disponible: number; cantidad_vendida: number; precio_venta_proveedora: number; precio_venta_tuyo: number; total_a_reportar_proveedora: number; tu_ganancia_total: number; estado: string; }
 
-// ─── SHARED UI ────────────────────────────────────────────────
 const Modal = ({ isOpen, onClose, title, children }: any) => (
   <AnimatePresence>
     {isOpen && (
@@ -96,7 +93,6 @@ const KPI = ({ title, value, icon: Icon, trend, color = "primary", delay = 0 }: 
 const btnPrimary = "flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-bold transition-all hover:opacity-90 active:scale-95 shadow-sm";
 const inputCls = "w-full px-4 py-2.5 rounded-xl border border-gray-200 outline-none text-sm focus:border-[#F45B69] transition-colors";
 
-// ─── SIDEBAR ──────────────────────────────────────────────────
 const Sidebar = ({ user, onLogout, mobileOpen, setMobileOpen }: any) => {
   const loc = useLocation();
   const items = [
@@ -181,7 +177,6 @@ const Layout = ({ children, user, onLogout, cartCount, onOpenCart }: any) => {
   );
 };
 
-// ─── LOGIN ────────────────────────────────────────────────────
 const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
@@ -239,17 +234,31 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
   );
 };
 
-// ─── CART DRAWER ──────────────────────────────────────────────
-const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, isOpen, onClose }: any) => {
+// ─── CART DRAWER ── con efectivo/cambio + descuentos ──────────
+const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, isOpen, onClose, onUpdateDiscount }: any) => {
   const [custId, setCustId] = useState<number | string>(0);
   const [fiado, setFiado] = useState(false);
   const [abono, setAbono] = useState("");
-  const total = items.reduce((s: number, i: CartItem) => s + i.precio_venta * i.quantity, 0);
+  const [efectivo, setEfectivo] = useState("");
+  const [descuentoGlobal, setDescuentoGlobal] = useState("");
+  const [showDescuentos, setShowDescuentos] = useState(false);
+
+  const subtotalSinDesc = items.reduce((s: number, i: CartItem) => s + i.precio_venta * i.quantity, 0);
+  const descuentosProductos = items.reduce((s: number, i: CartItem) => s + (i.discount || 0), 0);
+  const descGlobalNum = Number(descuentoGlobal) || 0;
+  const total = Math.max(0, subtotalSinDesc - descuentosProductos - descGlobalNum);
+  const cambio = efectivo && !fiado ? Math.max(0, Number(efectivo) - total) : 0;
 
   const checkout = () => {
     const cust = custId === 0 ? "Consumidor Final" : customers.find((c: Customer) => c.id === Number(custId))?.name;
-    onCheckout(cust, Number(custId) || null, fiado ? "fiado" : "pagado", fiado ? Number(abono) || 0 : total);
-    setCustId(0); setFiado(false); setAbono("");
+    onCheckout(
+      cust,
+      Number(custId) || null,
+      fiado ? "fiado" : "pagado",
+      fiado ? Number(abono) || 0 : total,
+      descGlobalNum
+    );
+    setCustId(0); setFiado(false); setAbono(""); setEfectivo(""); setDescuentoGlobal("");
   };
 
   return (
@@ -272,6 +281,7 @@ const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, 
                 <div className="text-center py-12 text-gray-400"><ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-30" /><p className="font-medium">Carrito vacío</p></div>
               ) : (
                 <>
+                  {/* Cliente y tipo de venta */}
                   <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                     <label className="block text-xs font-bold uppercase mb-2" style={{ color: C.textSub }}>Cliente</label>
                     <select value={custId} onChange={e => setCustId(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none">
@@ -284,11 +294,13 @@ const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, 
                     </label>
                     {fiado && (
                       <div className="mt-3">
-                        <label className="block text-xs font-bold uppercase mb-1" style={{ color: C.textSub }}>Monto a Pagar Ahora</label>
+                        <label className="block text-xs font-bold uppercase mb-1" style={{ color: C.textSub }}>Abono inicial</label>
                         <input type="number" step="0.01" value={abono} onChange={e => setAbono(e.target.value)} className={inputCls} placeholder="0.00" max={total} />
                       </div>
                     )}
                   </div>
+
+                  {/* Productos */}
                   <div className="space-y-3">
                     {items.map((item: CartItem) => (
                       <div key={item.id} className="bg-white border border-gray-100 rounded-2xl p-4 flex gap-3">
@@ -302,19 +314,89 @@ const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, 
                             <button onClick={() => onUpdateQuantity(item.id, item.quantity + 1)} className="w-6 h-6 rounded-xl flex items-center justify-center text-white" style={{ background: C.primary }}><Plus className="w-3 h-3" /></button>
                             <button onClick={() => onRemove(item.id)} className="ml-auto text-rose-400 hover:text-rose-600"><Trash2 className="w-4 h-4" /></button>
                           </div>
+                          {/* Descuento por producto */}
+                          {showDescuentos && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <Tag className="w-3 h-3 text-purple-400" />
+                              <input
+                                type="number" min="0" step="0.01" placeholder="Desc. $"
+                                value={item.discount || ""}
+                                onChange={e => onUpdateDiscount(item.id, Number(e.target.value))}
+                                className="w-24 px-2 py-1 text-xs rounded-lg border border-purple-200 outline-none focus:border-purple-400"
+                              />
+                              {item.discount > 0 && <span className="text-xs text-purple-600 font-bold">-${item.discount.toFixed(2)}</span>}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
+
+                  {/* Botón mostrar descuentos */}
+                  <button onClick={() => setShowDescuentos(p => !p)}
+                    className="w-full py-2 rounded-xl border border-purple-200 text-xs font-bold text-purple-600 hover:bg-purple-50 flex items-center justify-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5" />{showDescuentos ? "Ocultar descuentos" : "Agregar descuentos"}
+                  </button>
+
+                  {/* Descuento global a la factura */}
+                  {showDescuentos && (
+                    <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100">
+                      <label className="block text-xs font-bold uppercase mb-2 text-purple-700">Descuento global a la factura ($)</label>
+                      <input type="number" min="0" step="0.01" value={descuentoGlobal}
+                        onChange={e => setDescuentoGlobal(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-purple-200 text-sm outline-none focus:border-purple-400"
+                        placeholder="0.00" />
+                      <p className="text-[10px] mt-1 text-purple-500">Se aplica sobre el total después de descuentos por producto</p>
+                    </div>
+                  )}
+
+                  {/* Efectivo recibido */}
+                  {!fiado && (
+                    <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
+                      <label className="block text-xs font-bold uppercase mb-2 text-emerald-700">💵 Efectivo recibido</label>
+                      <input type="number" min="0" step="0.01" value={efectivo}
+                        onChange={e => setEfectivo(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-emerald-200 text-sm outline-none focus:border-emerald-400"
+                        placeholder="0.00 (opcional)" />
+                      {efectivo && Number(efectivo) >= total && (
+                        <div className="mt-2 flex justify-between items-center">
+                          <span className="text-xs font-bold text-emerald-700">Cambio a devolver:</span>
+                          <span className="text-lg font-black text-emerald-700">${cambio.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {efectivo && Number(efectivo) < total && (
+                        <p className="text-xs text-rose-500 mt-1 font-bold">⚠️ Efectivo insuficiente (faltan ${(total - Number(efectivo)).toFixed(2)})</p>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
+
             {items.length > 0 && (
-              <div className="p-5 border-t border-gray-100 space-y-3">
+              <div className="p-5 border-t border-gray-100 space-y-2">
+                {/* Resumen de precios */}
+                {(descuentosProductos > 0 || descGlobalNum > 0) && (
+                  <div className="bg-gray-50 rounded-xl p-3 space-y-1">
+                    <div className="flex justify-between text-xs" style={{ color: C.textSub }}>
+                      <span>Subtotal</span><span>${subtotalSinDesc.toFixed(2)}</span>
+                    </div>
+                    {descuentosProductos > 0 && (
+                      <div className="flex justify-between text-xs text-purple-600 font-bold">
+                        <span>Desc. productos</span><span>-${descuentosProductos.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {descGlobalNum > 0 && (
+                      <div className="flex justify-between text-xs text-purple-600 font-bold">
+                        <span>Desc. factura</span><span>-${descGlobalNum.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-black" style={{ color: C.text }}>
                   <span>Total</span><span style={{ color: C.primary }}>${total.toFixed(2)}</span>
                 </div>
-                {fiado && <div className="flex justify-between text-sm text-amber-700 font-bold"><span>Quedaría pendiente:</span><span>${Math.max(0, total - (Number(abono) || 0)).toFixed(2)}</span></div>}
+                {fiado && abono && <div className="flex justify-between text-sm text-amber-700 font-bold"><span>Quedaría pendiente:</span><span>${Math.max(0, total - (Number(abono) || 0)).toFixed(2)}</span></div>}
                 <button onClick={checkout} className="w-full py-3.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-95" style={{ background: GRADIENT }}>
                   <CheckCircle2 className="w-4 h-4" />Confirmar Venta
                 </button>
@@ -327,7 +409,6 @@ const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, 
   );
 };
 
-// ─── DASHBOARD ────────────────────────────────────────────────
 const DashboardPage = ({ sales, products, expenses, customers }: any) => {
   const totalIngresos = sales.reduce((s: number, v: Sale) => s + v.total, 0);
   const totalGastos = expenses.reduce((s: number, e: Expense) => s + e.amount, 0);
@@ -436,7 +517,6 @@ const DashboardPage = ({ sales, products, expenses, customers }: any) => {
   );
 };
 
-// ─── MAIN APP ─────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState<User | null>(() => {
     try { const u = localStorage.getItem("farmasi_user"); const p = u ? JSON.parse(u) : null; if (!p?.token || !p?.rol) return null; return p; } catch { return null; }
@@ -453,25 +533,22 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
 
-  // ── Modals ──
   const [modalCustomer, setModalCustomer] = useState(false);
   const [modalExpense, setModalExpense] = useState(false);
-  const [modalAddProduct, setModalAddProduct] = useState(false);      // ✅ Agregar al catálogo global
-  const [modalEditProduct, setModalEditProduct] = useState<Product | null>(null); // ✅ Editar stock/precios
+  const [modalAddProduct, setModalAddProduct] = useState(false);
+  const [modalEditProduct, setModalEditProduct] = useState<Product | null>(null);
   const [modalProveedora, setModalProveedora] = useState(false);
   const [modalConsignacion, setModalConsignacion] = useState(false);
 
   const [searchInv, setSearchInv] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // ── Form: Nuevo producto global ──
   const emptyNewProduct = { nombre_producto: "", categoria: "", marca: "", descripcion: "", imagen_url: "", codigo_base: "" };
   const [formNewProduct, setFormNewProduct] = useState(emptyNewProduct);
 
-  // ── Form: Editar item inventario ──
-  const [formEdit, setFormEdit] = useState({ stock: "", precio_venta: "", precio_compra: "" });
+  // ✅ formEdit ahora incluye imagen_url
+  const [formEdit, setFormEdit] = useState({ stock: "", precio_venta: "", precio_compra: "", imagen_url: "" });
 
-  // ── Form: Consignación ──
   const emptyConsig = { proveedora_id: "", producto_global_id: "", cantidad_recibida: "", precio_costo: "0", precio_venta_proveedora: "", precio_venta_tuyo: "", notas: "" };
   const [formConsig, setFormConsig] = useState(emptyConsig);
 
@@ -489,7 +566,10 @@ export default function App() {
       ]);
       if (inv.status === "fulfilled") {
         setProducts(inv.value.map((i: any) => ({
-          id: i.id, nombre: i.nombre, categoria: i.categoria, stock: i.stock,
+          id: i.id,
+          // ✅ Guardamos producto_global_id para usarlo al vender
+          producto_global_id: i.producto_global_id || i.id,
+          nombre: i.nombre, categoria: i.categoria, stock: i.stock,
           precio_venta: i.precio_venta, precio_compra: i.precio_compra,
           imagen_url: i.imagen_url, marca: i.marca, descripcion: i.descripcion,
         })));
@@ -497,7 +577,7 @@ export default function App() {
       if (s.status === "fulfilled") {
         setSales(s.value.map((v: any) => ({
           id: `#V-${v.id}`, customer: v.customer, date: v.date?.split("T")[0] || v.date,
-          total: v.total, paidAmount: v.paidAmount || v.monto_pagado || v.total,
+          total: v.total, paidAmount: v.monto_pagado || v.paidAmount || v.total,
           status: v.status || v.estado, items: v.items || [],
         })));
       }
@@ -526,15 +606,44 @@ export default function App() {
     else setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: qty } : i));
   };
 
-  const checkout = async (customerName: string, customerId: number | null, status: string, paid: number) => {
+  // ✅ Actualizar descuento por producto
+  const updateDiscount = (id: number, discount: number) => {
+    setCart(prev => prev.map(i => i.id === id ? { ...i, discount: Math.max(0, discount) } : i));
+  };
+
+  // ✅ checkout corregido: usa producto_global_id real, descuentos y monto_pagado
+  const checkout = async (customerName: string, customerId: number | null, status: string, paid: number, descuentoGlobal: number = 0) => {
     try {
-      const total = cart.reduce((s, i) => s + i.precio_venta * i.quantity, 0);
+      const subtotal = cart.reduce((s, i) => s + i.precio_venta * i.quantity, 0);
+      const descProductos = cart.reduce((s, i) => s + (i.discount || 0), 0);
+      const total = Math.max(0, subtotal - descProductos - descuentoGlobal);
+
       const newSale = await api.createSale({
-        cliente_id: customerId, total, monto_pagado: paid, estado: status,
-        items: cart.map(i => ({ producto_global_id: i.id, cantidad: i.quantity, precio_unitario: i.precio_venta, descuento: 0, subtotal: i.precio_venta * i.quantity }))
+        cliente_id: customerId,
+        total,
+        monto_pagado: paid,
+        estado: status,
+        descuento_global: descuentoGlobal,
+        // ✅ FIX CRÍTICO: enviamos producto_global_id (no el id del inventario)
+        items: cart.map(i => ({
+          producto_global_id: i.producto_global_id || i.id,
+          cantidad: i.quantity,
+          precio_unitario: i.precio_venta,
+          descuento: i.discount || 0,
+          subtotal: i.precio_venta * i.quantity - (i.discount || 0),
+        }))
       });
-      setSales(prev => [{ id: `#V-${newSale.id}`, customer: customerName, date: new Date().toISOString().split("T")[0], total, paidAmount: paid, status, items: cart.map(i => ({ productId: i.id, name: i.nombre, quantity: i.quantity, price: i.precio_venta })) }, ...prev]);
-      setProducts(prev => prev.map(p => { const ci = cart.find(c => c.id === p.id); return ci ? { ...p, stock: Math.max(0, p.stock - ci.quantity) } : p; }));
+
+      setSales(prev => [{
+        id: `#V-${newSale.id}`, customer: customerName,
+        date: new Date().toISOString().split("T")[0],
+        total, paidAmount: paid, status,
+        items: cart.map(i => ({ productId: i.id, name: i.nombre, quantity: i.quantity, price: i.precio_venta, discount: i.discount }))
+      }, ...prev]);
+      setProducts(prev => prev.map(p => {
+        const ci = cart.find(c => c.id === p.id);
+        return ci ? { ...p, stock: Math.max(0, p.stock - ci.quantity) } : p;
+      }));
       setCart([]); setCartOpen(false);
       showToast(`✓ Venta registrada: $${total.toFixed(2)}`);
     } catch (err: any) { showToast(err.message || "Error al registrar venta", "error"); }
@@ -570,8 +679,6 @@ export default function App() {
                   </button>
                 </div>
               </div>
-
-              {/* ✅ BARRA DE BÚSQUEDA */}
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input type="text" value={searchInv} onChange={e => setSearchInv(e.target.value)}
@@ -580,7 +687,6 @@ export default function App() {
                 {searchInv && <button onClick={() => setSearchInv("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>}
               </div>
               {searchInv && <p className="text-xs -mt-2" style={{ color: C.textSub }}>{filteredProducts.length} resultado{filteredProducts.length !== 1 ? "s" : ""} para <strong>"{searchInv}"</strong></p>}
-
               {loading ? (
                 <div className="text-center py-16">
                   <div className="w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-3" style={{ borderColor: C.primary, borderTopColor: "transparent" }} />
@@ -609,7 +715,6 @@ export default function App() {
                       <div className="p-4">
                         <p className="font-bold text-sm truncate" style={{ color: C.text }}>{p.nombre}</p>
                         <p className="text-xs mt-0.5" style={{ color: C.textSub }}>{p.categoria}{p.marca ? ` · ${p.marca}` : ""}</p>
-                        {/* ✅ DESCRIPCIÓN visible */}
                         {p.descripcion && <p className="text-[11px] mt-1 text-gray-400 line-clamp-2 leading-relaxed">{p.descripcion}</p>}
                         <div className="flex items-center justify-between mt-3">
                           <div>
@@ -617,10 +722,12 @@ export default function App() {
                             <p className="text-[10px]" style={{ color: C.gray400 }}>Costo: ${p.precio_compra.toFixed(2)}</p>
                           </div>
                           <div className="flex gap-1.5">
-                            {/* ✅ UN SOLO LÁPIZ siempre visible */}
                             <button
-                              onClick={() => { setModalEditProduct(p); setFormEdit({ stock: String(p.stock), precio_venta: String(p.precio_venta), precio_compra: String(p.precio_compra) }); }}
-                              className="p-2 rounded-xl border-2 hover:bg-pink-50 transition-colors" style={{ borderColor: C.soft }} title="Editar stock y precios">
+                              onClick={() => {
+                                setModalEditProduct(p);
+                                setFormEdit({ stock: String(p.stock), precio_venta: String(p.precio_venta), precio_compra: String(p.precio_compra), imagen_url: p.imagen_url || "" });
+                              }}
+                              className="p-2 rounded-xl border-2 hover:bg-pink-50 transition-colors" style={{ borderColor: C.soft }} title="Editar">
                               <Pencil className="w-3.5 h-3.5" style={{ color: C.primary }} />
                             </button>
                             {p.stock > 0 && (
@@ -665,8 +772,8 @@ export default function App() {
                             <td className="px-5 py-4"><span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${v.status === "pagado" ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"}`}>{v.status}</span></td>
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-2">
-                                <button onClick={() => printThermal({ id: v.id, empresa: user?.nombre || "Farmasi", cliente: v.customer, fecha: v.date, items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price })), total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount, estado: v.status })} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500"><Printer className="w-3.5 h-3.5" /></button>
-                                <button onClick={() => downloadTxt({ id: v.id, empresa: user?.nombre || "Farmasi", cliente: v.customer, fecha: v.date, items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price })), total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount, estado: v.status })} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500"><Download className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => printThermal({ id: v.id, empresa: user?.nombre || "Farmasi", cliente: v.customer, fecha: v.date, items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price, discount: i.discount })), total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount, estado: v.status })} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500"><Printer className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => downloadTxt({ id: v.id, empresa: user?.nombre || "Farmasi", cliente: v.customer, fecha: v.date, items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price, discount: i.discount })), total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount, estado: v.status })} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500"><Download className="w-3.5 h-3.5" /></button>
                               </div>
                             </td>
                           </tr>
@@ -812,7 +919,6 @@ export default function App() {
         </Routes>
       </Layout>
 
-      {/* FAB carrito */}
       {cart.length > 0 && !cartOpen && (
         <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} whileTap={{ scale: 0.95 }}
           onClick={() => setCartOpen(true)} className="fixed bottom-8 right-8 w-14 h-14 rounded-full text-white shadow-2xl flex items-center justify-center z-50"
@@ -822,7 +928,11 @@ export default function App() {
         </motion.button>
       )}
 
-      <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} items={cart} customers={customers} onUpdateQuantity={updateQty} onRemove={(id: number) => setCart(p => p.filter(i => i.id !== id))} onCheckout={checkout} />
+      <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} items={cart} customers={customers}
+        onUpdateQuantity={updateQty}
+        onRemove={(id: number) => setCart(p => p.filter(i => i.id !== id))}
+        onUpdateDiscount={updateDiscount}
+        onCheckout={checkout} />
 
       {/* ── MODAL NUEVA CLIENTE ── */}
       <Modal isOpen={modalCustomer} onClose={() => setModalCustomer(false)} title="Nueva Cliente">
@@ -855,7 +965,7 @@ export default function App() {
         </form>
       </Modal>
 
-      {/* ── ✅ MODAL AGREGAR PRODUCTO AL CATÁLOGO GLOBAL ── */}
+      {/* ── MODAL AGREGAR PRODUCTO AL CATÁLOGO GLOBAL ── */}
       <Modal isOpen={modalAddProduct} onClose={() => setModalAddProduct(false)} title="✨ Agregar Nuevo Producto">
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault();
@@ -870,7 +980,6 @@ export default function App() {
               imagen_url: formNewProduct.imagen_url || null,
               codigo_base: formNewProduct.codigo_base || null,
             });
-            // Recargar inventario para que aparezca el nuevo producto
             await loadData();
             setModalAddProduct(false);
             setFormNewProduct(emptyNewProduct);
@@ -881,12 +990,10 @@ export default function App() {
           <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700 font-medium">
             💡 Este producto quedará disponible para <strong>todas las empresas</strong> del sistema automáticamente.
           </div>
-
           <div>
             <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Nombre del Producto *</label>
             <input value={formNewProduct.nombre_producto} onChange={e => setFormNewProduct(p => ({ ...p, nombre_producto: e.target.value }))} required className={inputCls} placeholder="Ej: Labial Matte Rosa" />
           </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Categoría *</label>
@@ -900,30 +1007,25 @@ export default function App() {
               <input value={formNewProduct.marca} onChange={e => setFormNewProduct(p => ({ ...p, marca: e.target.value }))} className={inputCls} placeholder="Ej: Farmasi" />
             </div>
           </div>
-
           <div>
             <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Descripción</label>
-            <textarea value={formNewProduct.descripcion} onChange={e => setFormNewProduct(p => ({ ...p, descripcion: e.target.value }))} className={`${inputCls} h-20 resize-none`} placeholder="Describe el producto: beneficios, características, tonos, etc..." />
-            <p className="text-[10px] mt-1 text-gray-400">Esta descripción aparecerá en el inventario y se usará para buscar el producto.</p>
+            <textarea value={formNewProduct.descripcion} onChange={e => setFormNewProduct(p => ({ ...p, descripcion: e.target.value }))} className={`${inputCls} h-20 resize-none`} placeholder="Describe el producto..." />
           </div>
-
           <div>
             <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>URL de Imagen</label>
             <input value={formNewProduct.imagen_url} onChange={e => setFormNewProduct(p => ({ ...p, imagen_url: e.target.value }))} className={inputCls} placeholder="https://..." />
           </div>
-
           <div>
             <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Código Base (opcional)</label>
             <input value={formNewProduct.codigo_base} onChange={e => setFormNewProduct(p => ({ ...p, codigo_base: e.target.value }))} className={inputCls} placeholder="Se genera automático si lo dejas vacío" />
           </div>
-
           <button type="submit" disabled={saving} className="w-full py-3.5 rounded-xl text-white font-bold text-sm hover:opacity-90 disabled:opacity-60" style={{ background: GRADIENT }}>
             {saving ? "Guardando..." : "✨ Agregar al Catálogo"}
           </button>
         </form>
       </Modal>
 
-      {/* ── ✅ MODAL EDITAR PRODUCTO (UN SOLO LÁPIZ) ── */}
+      {/* ── MODAL EDITAR PRODUCTO ── con imagen_url */}
       <Modal isOpen={!!modalEditProduct} onClose={() => setModalEditProduct(null)} title={`✏️ Editar: ${modalEditProduct?.nombre || ""}`}>
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault(); if (!modalEditProduct) return;
@@ -933,9 +1035,10 @@ export default function App() {
               stock: Number(formEdit.stock),
               precio_venta: Number(formEdit.precio_venta),
               precio_compra: Number(formEdit.precio_compra),
-            });
+              imagen_url: formEdit.imagen_url || undefined,
+            } as any);
             setProducts(prev => prev.map(p => p.id === modalEditProduct.id
-              ? { ...p, stock: updated.stock ?? Number(formEdit.stock), precio_venta: updated.precio_venta ?? Number(formEdit.precio_venta), precio_compra: updated.precio_compra ?? Number(formEdit.precio_compra) }
+              ? { ...p, stock: updated.stock ?? Number(formEdit.stock), precio_venta: updated.precio_venta ?? Number(formEdit.precio_venta), precio_compra: updated.precio_compra ?? Number(formEdit.precio_compra), imagen_url: updated.imagen_url ?? formEdit.imagen_url }
               : p
             ));
             setModalEditProduct(null); showToast(`✓ ${modalEditProduct.nombre} actualizado`);
@@ -943,11 +1046,14 @@ export default function App() {
           finally { setSaving(false); }
         }}>
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
-            {modalEditProduct?.imagen_url ? <img src={modalEditProduct.imagen_url} alt="" className="w-12 h-12 rounded-xl object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} /> : <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: C.soft }}><Package className="w-6 h-6" style={{ color: C.primary }} /></div>}
+            {(formEdit.imagen_url || modalEditProduct?.imagen_url) ? (
+              <img src={formEdit.imagen_url || modalEditProduct?.imagen_url} alt="" className="w-12 h-12 rounded-xl object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            ) : (
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: C.soft }}><Package className="w-6 h-6" style={{ color: C.primary }} /></div>
+            )}
             <div>
               <p className="font-bold text-sm" style={{ color: C.text }}>{modalEditProduct?.nombre}</p>
               <p className="text-xs" style={{ color: C.textSub }}>{modalEditProduct?.categoria}{modalEditProduct?.marca ? ` · ${modalEditProduct.marca}` : ""}</p>
-              {modalEditProduct?.descripcion && <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{modalEditProduct.descripcion}</p>}
             </div>
           </div>
           <div>
@@ -957,6 +1063,11 @@ export default function App() {
           <div className="grid grid-cols-2 gap-3">
             <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Precio Venta ($)</label><input type="number" min="0" step="0.01" value={formEdit.precio_venta} onChange={e => setFormEdit(p => ({ ...p, precio_venta: e.target.value }))} className={inputCls} placeholder="0.00" /></div>
             <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Precio Costo ($)</label><input type="number" min="0" step="0.01" value={formEdit.precio_compra} onChange={e => setFormEdit(p => ({ ...p, precio_compra: e.target.value }))} className={inputCls} placeholder="0.00" /></div>
+          </div>
+          {/* ✅ Campo URL imagen */}
+          <div>
+            <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>URL de Imagen</label>
+            <input value={formEdit.imagen_url} onChange={e => setFormEdit(p => ({ ...p, imagen_url: e.target.value }))} className={inputCls} placeholder="https://..." />
           </div>
           {Number(formEdit.precio_venta) > 0 && Number(formEdit.precio_compra) >= 0 && (
             <div className={`p-3 rounded-xl text-center ${Number(formEdit.precio_venta) > Number(formEdit.precio_compra) ? "bg-emerald-50" : "bg-rose-50"}`}>
@@ -986,7 +1097,7 @@ export default function App() {
         </form>
       </Modal>
 
-      {/* ── ✅ MODAL CONSIGNACIÓN ── */}
+      {/* ── MODAL CONSIGNACIÓN ── */}
       <Modal isOpen={modalConsignacion} onClose={() => setModalConsignacion(false)} title="📦 Nueva Consignación">
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault();
