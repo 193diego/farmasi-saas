@@ -243,11 +243,17 @@ const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, 
   const [descuentoGlobal, setDescuentoGlobal] = useState("");
   const [showDescuentos, setShowDescuentos] = useState(false);
 
+
   const subtotalSinDesc = items.reduce((s: number, i: CartItem) => s + i.precio_venta * i.quantity, 0);
-  const descuentosProductos = items.reduce((s: number, i: CartItem) => s + (i.discount || 0), 0);
-  const descGlobalNum = Number(descuentoGlobal) || 0;
-  const total = Math.max(0, subtotalSinDesc - descuentosProductos - descGlobalNum);
+  const descuentosProductos = items.reduce((s: number, i: CartItem) => {
+    return s + ((i.discount || 0) / 100) * i.precio_venta * i.quantity;
+  }, 0);
+  const descGlobalPct = Number(descuentoGlobal) || 0;
+  const subtotalPostProductos = subtotalSinDesc - descuentosProductos;
+  const descGlobalNum = (descGlobalPct / 100) * subtotalPostProductos;
+  const total = Math.max(0, subtotalPostProductos - descGlobalNum);
   const cambio = efectivo && !fiado ? Math.max(0, Number(efectivo) - total) : 0;
+
 
   const checkout = () => {
     const cust = custId === 0 ? "Consumidor Final" : customers.find((c: Customer) => c.id === Number(custId))?.name;
@@ -319,12 +325,17 @@ const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, 
                             <div className="mt-2 flex items-center gap-2">
                               <Tag className="w-3 h-3 text-purple-400" />
                               <input
-                                type="number" min="0" step="0.01" placeholder="Desc. $"
+                                type="number" min="0" max="100" step="0.1" placeholder="Desc. %"
                                 value={item.discount || ""}
                                 onChange={e => onUpdateDiscount(item.id, Number(e.target.value))}
                                 className="w-24 px-2 py-1 text-xs rounded-lg border border-purple-200 outline-none focus:border-purple-400"
                               />
-                              {item.discount > 0 && <span className="text-xs text-purple-600 font-bold">-${item.discount.toFixed(2)}</span>}
+                              <span className="text-[10px] text-purple-500">%</span>
+                              {item.discount > 0 && (
+                                <span className="text-xs text-purple-600 font-bold">
+                                  -{((item.discount / 100) * item.precio_venta * item.quantity).toFixed(2)}
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -341,12 +352,12 @@ const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, 
                   {/* Descuento global a la factura */}
                   {showDescuentos && (
                     <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100">
-                      <label className="block text-xs font-bold uppercase mb-2 text-purple-700">Descuento global a la factura ($)</label>
-                      <input type="number" min="0" step="0.01" value={descuentoGlobal}
+                      <label className="block text-xs font-bold uppercase mb-2 text-purple-700">Descuento global a la factura (%)</label>
+                      <input type="number" min="0" max="100" step="0.1" value={descuentoGlobal}
                         onChange={e => setDescuentoGlobal(e.target.value)}
                         className="w-full px-3 py-2 rounded-xl border border-purple-200 text-sm outline-none focus:border-purple-400"
                         placeholder="0.00" />
-                      <p className="text-[10px] mt-1 text-purple-500">Se aplica sobre el total después de descuentos por producto</p>
+                      <p className="text-[10px] mt-1 text-purple-500">Ej: 10 = 10% sobre el total después de descuentos por producto</p>
                     </div>
                   )}
 
@@ -611,29 +622,30 @@ export default function App() {
     setCart(prev => prev.map(i => i.id === id ? { ...i, discount: Math.max(0, discount) } : i));
   };
 
-  // ✅ checkout corregido: usa producto_global_id real, descuentos y monto_pagado
-  const checkout = async (customerName: string, customerId: number | null, status: string, paid: number, descuentoGlobal: number = 0) => {
-    try {
-      const subtotal = cart.reduce((s, i) => s + i.precio_venta * i.quantity, 0);
-      const descProductos = cart.reduce((s, i) => s + (i.discount || 0), 0);
-      const total = Math.max(0, subtotal - descProductos - descuentoGlobal);
+  const checkout = async (customerName: string, customerId: number | null, status: string, paid: number, descuentoGlobalPct: number = 0) => {
+  try {
+    const subtotal = cart.reduce((s, i) => s + i.precio_venta * i.quantity, 0);
+    const descProductos = cart.reduce((s, i) => {
+      return s + ((i.discount || 0) / 100) * i.precio_venta * i.quantity;
+    }, 0);
+    const subtotalPostProductos = subtotal - descProductos;
+    const descGlobalMonto = (descuentoGlobalPct / 100) * subtotalPostProductos;
+    const total = Math.max(0, subtotalPostProductos - descGlobalMonto);
 
-      const newSale = await api.createSale({
-        cliente_id: customerId,
-        total,
-        monto_pagado: paid,
-        estado: status,
-        descuento_global: descuentoGlobal,
-        // ✅ FIX CRÍTICO: enviamos producto_global_id (no el id del inventario)
-        items: cart.map(i => ({
-          producto_global_id: i.producto_global_id || i.id,
-          cantidad: i.quantity,
-          precio_unitario: i.precio_venta,
-          descuento: i.discount || 0,
-          subtotal: i.precio_venta * i.quantity - (i.discount || 0),
-        }))
-      });
-
+    const newSale = await api.createSale({
+      cliente_id: customerId,
+      total,
+      monto_pagado: paid,
+      estado: status,
+      descuento_global: descGlobalMonto,
+      items: cart.map(i => ({
+        producto_global_id: i.producto_global_id || i.id,  // ✅ FK fix
+        cantidad: i.quantity,
+        precio_unitario: i.precio_venta,
+        descuento: ((i.discount || 0) / 100) * i.precio_venta * i.quantity,
+        subtotal: i.precio_venta * i.quantity - ((i.discount || 0) / 100) * i.precio_venta * i.quantity,
+      }))
+    });
       setSales(prev => [{
         id: `#V-${newSale.id}`, customer: customerName,
         date: new Date().toISOString().split("T")[0],
