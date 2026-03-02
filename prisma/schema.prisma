@@ -12,7 +12,7 @@ datasource db {
 
 model Plan {
   id               Int       @id @default(autoincrement())
-  nombre_plan      String
+  nombre_plan      String    @unique
   precio           Float
   limite_usuarios  Int
   limite_productos Int
