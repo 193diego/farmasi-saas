@@ -15,11 +15,11 @@ router.delete("/:id", authenticateToken, async (req: any, res) => {
     const companyId = req.user.company_id;
     const saleId = Number(req.params.id);
 
-    // Buscar la venta con sus items
+    // Buscar la venta con sus detalles (nombre correcto del schema: detalles)
     const venta = await prisma.venta.findFirst({
       where: { id: saleId, company_id: companyId },
       include: {
-        items: true,
+        detalles: true,
       },
     });
 
@@ -28,23 +28,29 @@ router.delete("/:id", authenticateToken, async (req: any, res) => {
     }
 
     await prisma.$transaction(async (tx) => {
-      // 1. Restaurar stock en inventario por cada item
-      for (const item of venta.items) {
+      // 1. Restaurar stock en inventario por cada detalle
+      for (const detalle of venta.detalles) {
         await tx.inventarioEmpresa.updateMany({
           where: {
             company_id: companyId,
-            producto_global_id: item.producto_global_id,
+            producto_global_id: detalle.producto_global_id,
           },
           data: {
-            stock: { increment: item.cantidad },
+            stock: { increment: detalle.cantidad },
           },
         });
       }
 
-      // 2. Eliminar items de la venta
-      await tx.itemVenta.deleteMany({ where: { venta_id: saleId } });
+      // 2. Eliminar ventas consignacion relacionadas si existen
+      await tx.ventaConsignacion.deleteMany({ where: { venta_id: saleId } });
 
-      // 3. Eliminar la venta
+      // 3. Eliminar detalles de la venta
+      await tx.detalleVenta.deleteMany({ where: { venta_id: saleId } });
+
+      // 4. Eliminar cuenta por cobrar si existe
+      await tx.cuentaPorCobrar.deleteMany({ where: { venta_id: saleId } });
+
+      // 5. Eliminar la venta
       await tx.venta.delete({ where: { id: saleId } });
     });
 
