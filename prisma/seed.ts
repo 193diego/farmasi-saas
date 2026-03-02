@@ -22,8 +22,6 @@ async function main() {
   console.log(`✅ Planes creados: ${planes.count}`);
 
   // ── 2. SUPER ADMIN ─────────────────────────────────────────
-  // ⚠️ El super_admin NO pertenece a ninguna empresa (company_id: null)
-  // Él es el administrador de la plataforma, no un usuario de cliente.
   const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || "admin@farmasi.com";
   const superAdminPass  = process.env.SUPER_ADMIN_PASS  || "farmasi2024";
 
@@ -33,7 +31,7 @@ async function main() {
     const hashedPassword = await bcrypt.hash(superAdminPass, 10);
     await prisma.user.create({
       data: {
-        company_id: null,           // ✅ Sin empresa — es el dueño de la plataforma
+        company_id: null,
         nombre: "Super Administrador",
         email: superAdminEmail,
         password: hashedPassword,
@@ -45,8 +43,6 @@ async function main() {
     console.log(`   ⚠️  Cámbiala desde el panel después del primer login`);
   } else {
     console.log(`ℹ️  Super Admin ya existe: ${superAdminEmail}`);
-
-    // 🔧 Parche: si el super_admin existente tiene company_id, lo limpiamos
     if (existeAdmin.company_id !== null) {
       await prisma.user.update({
         where: { email: superAdminEmail },
@@ -57,7 +53,6 @@ async function main() {
   }
 
   // ── 3. EMPRESA DEMO ────────────────────────────────────────
-  // Esta empresa sirve para que el owner de prueba pueda entrar al sistema
   let empresa = await prisma.company.findFirst({
     where: { nombre_empresa: "Mi Farmasi" }
   });
@@ -69,7 +64,7 @@ async function main() {
         nombre_empresa: "Mi Farmasi",
         plan_id: planBasico!.id,
         estado: "activo",
-        fecha_vencimiento: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 año
+        fecha_vencimiento: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
       }
     });
     console.log(`✅ Empresa demo creada: ${empresa.nombre_empresa}`);
@@ -85,7 +80,7 @@ async function main() {
     const hashedPassword = await bcrypt.hash(ownerPass, 10);
     await prisma.user.create({
       data: {
-        company_id: empresa.id,     // ✅ El owner SÍ pertenece a una empresa
+        company_id: empresa.id,
         nombre: "Dueña del Negocio",
         email: ownerEmail,
         password: hashedPassword,
@@ -96,45 +91,8 @@ async function main() {
     console.log(`   Contraseña inicial: ${ownerPass}`);
   }
 
-  // ── 5. PRODUCTOS GLOBALES FARMASI (CATÁLOGO BASE) ─────────
-  const productos = await prisma.productoGlobal.createMany({
-    data: [
-      { nombre_producto: "Labial Matte",          categoria: "Maquillaje",    marca: "Farmasi",     codigo_base: "FAR-LM-001",  descripcion: "Labial matte de larga duración en variedad de tonos" },
-      { nombre_producto: "Crema Hidratante",       categoria: "Cuidado Piel",  marca: "Dr. C. Tuna", codigo_base: "FAR-CH-001",  descripcion: "Crema hidratante con ingredientes naturales" },
-      { nombre_producto: "Perfume Floral",         categoria: "Fragancias",    marca: "Farmasi",     codigo_base: "FAR-PF-001",  descripcion: "Fragancia floral elegante" },
-      { nombre_producto: "Máscara de Pestañas",    categoria: "Maquillaje",    marca: "Farmasi",     codigo_base: "FAR-MP-001",  descripcion: "Máscara voluminizadora y alargadora" },
-      { nombre_producto: "Sérum Vitamina C",       categoria: "Cuidado Piel",  marca: "Dr. C. Tuna", codigo_base: "FAR-SVC-001", descripcion: "Sérum iluminador con vitamina C" },
-      { nombre_producto: "Base Maquillaje",        categoria: "Maquillaje",    marca: "Farmasi",     codigo_base: "FAR-BM-001",  descripcion: "Base de alta cobertura" },
-      { nombre_producto: "Sombras de Ojos",        categoria: "Maquillaje",    marca: "Farmasi",     codigo_base: "FAR-SO-001",  descripcion: "Paleta de sombras multicolor" },
-      { nombre_producto: "Crema Anti-Edad",        categoria: "Cuidado Piel",  marca: "Dr. C. Tuna", codigo_base: "FAR-CAE-001", descripcion: "Crema reductora de arrugas" },
-      { nombre_producto: "Shampoo Nutrición",      categoria: "Cabello",       marca: "Farmasi",     codigo_base: "FAR-SH-001",  descripcion: "Shampoo nutritivo para cabello seco" },
-      { nombre_producto: "Perfume Oriental",       categoria: "Fragancias",    marca: "Farmasi",     codigo_base: "FAR-PO-001",  descripcion: "Fragancia oriental intensa" },
-    ],
-    skipDuplicates: true,
-  });
-  console.log(`✅ Productos globales creados: ${productos.count}`);
-
-  // ── 6. INICIALIZAR INVENTARIO DE LA EMPRESA DEMO EN CERO ──
-  const todosProductos = await prisma.productoGlobal.findMany();
-  const inventarioExistente = await prisma.inventarioEmpresa.findMany({
-    where: { company_id: empresa.id }
-  });
-  const idsExistentes = new Set(inventarioExistente.map(i => i.producto_global_id));
-
-  const nuevosInventarios = todosProductos
-    .filter(p => !idsExistentes.has(p.id))
-    .map(p => ({
-      company_id: empresa.id,
-      producto_global_id: p.id,
-      stock: 0,
-      precio_compra: 0,
-      precio_venta: 0,
-    }));
-
-  if (nuevosInventarios.length > 0) {
-    await prisma.inventarioEmpresa.createMany({ data: nuevosInventarios });
-    console.log(`✅ Inventario inicializado: ${nuevosInventarios.length} productos en $0`);
-  }
+  // ── 5. PRODUCTOS Y INVENTARIO ──────────────────────────────
+  // ✅ Eliminado — los productos se agregan manualmente desde la app
 
   console.log("\n🎉 Seed completado exitosamente!");
   console.log("═══════════════════════════════════════════════════");
