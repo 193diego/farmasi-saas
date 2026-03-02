@@ -86,6 +86,8 @@ model Cliente {
   nombre          String
   telefono        String?
   direccion       String?
+  email           String?  // ✅ NUEVO
+  cedula          String?  // ✅ NUEVO
   saldo_pendiente Float    @default(0)
   fecha_creacion  DateTime @default(now())
   ventas          Venta[]

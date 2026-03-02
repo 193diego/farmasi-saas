@@ -94,17 +94,6 @@ async function main() {
   // ── 5. PRODUCTOS Y INVENTARIO ──────────────────────────────
   // ✅ Eliminado — los productos se agregan manualmente desde la app
 
-  console.log("\n🎉 Seed completado exitosamente!");
-  console.log("═══════════════════════════════════════════════════");
-  console.log("👑 SUPER ADMIN (plataforma, sin empresa)");
-  console.log("   📧 Email:     ", superAdminEmail);
-  console.log("   🔑 Contraseña:", superAdminPass);
-  console.log("───────────────────────────────────────────────────");
-  console.log("🏪 OWNER DEMO (empresa Mi Farmasi)");
-  console.log("   📧 Email:     ", ownerEmail);
-  console.log("   🔑 Contraseña:", ownerPass);
-  console.log("═══════════════════════════════════════════════════");
-  console.log("⚠️  IMPORTANTE: Cambia las contraseñas después del primer login\n");
 }
 
 main()

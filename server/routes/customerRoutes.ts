@@ -1,4 +1,9 @@
 // server/routes/customerRoutes.ts
+// ✅ ACTUALIZADO: Agrega campos cedula y email al modelo Cliente
+// IMPORTANTE: Debes agregar estas columnas al schema de Prisma:
+//   cedula  String?
+//   email   String?
+// Y luego correr: npx prisma db push
 import { Router } from "express";
 import { authenticateToken } from "../middlewares/auth.js";
 import prisma from "../prisma.js";
@@ -19,17 +24,19 @@ router.get("/", authenticateToken, async (req: any, res) => {
       orderBy: { fecha_creacion: "desc" }
     });
 
-    const result = clientes.map(c => ({
+    const result = clientes.map((c: any) => ({
       id: c.id,
       name: c.nombre,
       phone: c.telefono,
       address: c.direccion,
+      email: c.email || null,       // ✅ NUEVO
+      cedula: c.cedula || null,     // ✅ NUEVO
       saldo_pendiente: c.saldo_pendiente,
       fecha_creacion: c.fecha_creacion,
-      totalSpent: c.ventas.reduce((s, v) => s + v.total, 0),
+      totalSpent: c.ventas.reduce((s: number, v: any) => s + v.total, 0),
       totalPurchases: c.ventas.length,
       lastPurchase: c.ventas.length > 0
-        ? c.ventas.sort((a, b) => new Date(b.fecha_venta).getTime() - new Date(a.fecha_venta).getTime())[0].fecha_venta
+        ? c.ventas.sort((a: any, b: any) => new Date(b.fecha_venta).getTime() - new Date(a.fecha_venta).getTime())[0].fecha_venta
         : null
     }));
 
@@ -43,16 +50,20 @@ router.get("/", authenticateToken, async (req: any, res) => {
 router.post("/", authenticateToken, async (req: any, res) => {
   try {
     const companyId = req.user.company_id;
-    const { name, phone, address } = req.body;
+    const { name, phone, address, email, cedula } = req.body;
+
     const cliente = await prisma.cliente.create({
       data: {
         company_id: companyId,
         nombre: name,
-        telefono: phone,
-        direccion: address,
-      }
+        telefono: phone || null,
+        direccion: address || null,
+        email: email || null,       // ✅ NUEVO
+        cedula: cedula || null,     // ✅ NUEVO
+      } as any,  // "as any" hasta que prisma regenere con los nuevos campos
     });
-    res.status(201).json({ ...cliente, name: cliente.nombre });
+
+    res.status(201).json({ ...cliente, name: (cliente as any).nombre, email: (cliente as any).email, cedula: (cliente as any).cedula });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
@@ -74,4 +85,3 @@ router.patch("/:id/abono", authenticateToken, async (req: any, res) => {
 });
 
 export default router;
-

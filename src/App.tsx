@@ -27,7 +27,7 @@ const GRADIENT_SOFT = `linear-gradient(135deg, #fff5f6, #fff)`;
 
 interface Product { id: number; nombre: string; categoria: string; stock: number; precio_venta: number; precio_compra: number; imagen_url?: string; marca?: string; descripcion?: string; producto_global_id?: number; }
 interface CartItem extends Product { quantity: number; discount: number; }
-interface Customer { id: number; name: string; phone?: string; address?: string; saldo_pendiente: number; totalSpent: number; }
+interface Customer { id: number; name: string; phone?: string; address?: string; email?: string; cedula?: string; saldo_pendiente: number; totalSpent: number; }
 interface User { id: number; company_id: number | null; rol: string; nombre: string; email: string; token: string; }
 interface Sale { id: string; customer: string; date: string; total: number; paidAmount: number; status: string; items: any[]; }
 interface Expense { id: number; concept: string; description?: string; category: string; date: string; amount: number; }
@@ -100,8 +100,8 @@ const Sidebar = ({ user, onLogout, mobileOpen, setMobileOpen }: any) => {
     { icon: Package, label: "Inventario", path: "/inventario" },
     { icon: ShoppingCart, label: "Ventas", path: "/ventas" },
     { icon: Users, label: "Clientes", path: "/clientes" },
-    { icon: CreditCard, label: "Fiados", path: "/fiados" },
-    { icon: TrendingDown, label: "Gastos", path: "/gastos" },
+    { icon: CreditCard, label: "Cuentas Cobrar", path: "/fiados" },
+    { icon: TrendingDown, label: "Egresos", path: "/gastos" },
     { icon: Layers, label: "Consignación", path: "/consignacion" },
     { icon: BarChart3, label: "Reportes", path: "/reportes" },
   ];
@@ -231,6 +231,59 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
         <p className="text-center text-xs mt-6" style={{ color: "#D4A8B0" }}>🌸 Farmasi SaaS · Hecho con amor para ti</p>
       </motion.div>
     </div>
+  );
+};
+
+// ─── NUEVO CLIENTE CON SRI ──────────────────────────────────
+const NewClienteSRIFields = () => {
+  const [cedula, setCedula] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [direccion, setDireccion] = useState("");
+  const [loadingSri, setLoadingSri] = useState(false);
+  const [sriError, setSriError] = useState("");
+
+  const consultarSRI = async () => {
+    if (cedula.length < 10) { setSriError("Ingresa una cédula válida (10 dígitos)"); return; }
+    setLoadingSri(true); setSriError("");
+    try {
+      const res = await fetch(`https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest/ContiRuc/obtenerPorNumerRuc?numeroRuc=${cedula}`);
+      if (!res.ok) throw new Error("No se encontró información");
+      const data = await res.json();
+      if (data?.nombreComercial || data?.razonSocial) {
+        setNombre(data.nombreComercial || data.razonSocial || "");
+        setSriError("");
+      } else {
+        setSriError("No se encontraron datos para esta cédula");
+      }
+    } catch {
+      setSriError("No se pudo consultar el SRI. Ingresa los datos manualmente.");
+    } finally { setLoadingSri(false); }
+  };
+
+  return (
+    <>
+      <div>
+        <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Cédula / RUC</label>
+        <div className="flex gap-2">
+          <input name="cedula" value={cedula} onChange={e => { setCedula(e.target.value); setSriError(""); }} className={`${inputCls} flex-1`} placeholder="0912345678" maxLength={13} />
+          <button type="button" onClick={consultarSRI} disabled={loadingSri}
+            className="px-3 py-2 rounded-xl text-white text-xs font-bold hover:opacity-90 disabled:opacity-60 whitespace-nowrap" style={{ background: GRADIENT }}>
+            {loadingSri ? "..." : "🔍 SRI"}
+          </button>
+        </div>
+        {sriError && <p className="text-xs text-rose-500 mt-1">{sriError}</p>}
+        <p className="text-[10px] text-gray-400 mt-1">Consulta automática del SRI con la cédula/RUC</p>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Nombre *</label><input name="name" required value={nombre} onChange={e => setNombre(e.target.value)} className={inputCls} placeholder="Nombre completo" /></div>
+        <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Teléfono</label><input name="phone" value={telefono} onChange={e => setTelefono(e.target.value)} className={inputCls} placeholder="09..." /></div>
+      </div>
+      <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Correo Electrónico</label><input name="email" type="email" value={correo} onChange={e => setCorreo(e.target.value)} className={inputCls} placeholder="cliente@email.com" /></div>
+      <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Dirección</label><input name="address" value={direccion} onChange={e => setDireccion(e.target.value)} className={inputCls} placeholder="Calle, ciudad..." /></div>
+      <button type="submit" className="w-full py-3 rounded-xl text-white font-bold text-sm" style={{ background: GRADIENT }}>Guardar Cliente</button>
+    </>
   );
 };
 
@@ -550,11 +603,12 @@ export default function App() {
   const [modalEditProduct, setModalEditProduct] = useState<Product | null>(null);
   const [modalProveedora, setModalProveedora] = useState(false);
   const [modalConsignacion, setModalConsignacion] = useState(false);
+  const [modalSaleDetail, setModalSaleDetail] = useState<Sale | null>(null);
 
   const [searchInv, setSearchInv] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const emptyNewProduct = { nombre_producto: "", categoria: "", marca: "", descripcion: "", imagen_url: "", codigo_base: "" };
+  const emptyNewProduct = { nombre_producto: "", categoria: "", descripcion: "", imagen_url: "", precio_venta: "", precio_compra: "", stock: "" };
   const [formNewProduct, setFormNewProduct] = useState(emptyNewProduct);
 
   // ✅ formEdit ahora incluye imagen_url
@@ -592,7 +646,7 @@ export default function App() {
           status: v.status || v.estado, items: v.items || [],
         })));
       }
-      if (c.status === "fulfilled") setCustomers(c.value.map((c: any) => ({ id: c.id, name: c.name, phone: c.phone, address: c.address, saldo_pendiente: c.saldo_pendiente || 0, totalSpent: c.totalSpent || 0 })));
+      if (c.status === "fulfilled") setCustomers(c.value.map((c: any) => ({ id: c.id, name: c.name, phone: c.phone, address: c.address, email: c.email, cedula: c.cedula, saldo_pendiente: c.saldo_pendiente || 0, totalSpent: c.totalSpent || 0 })));
       if (e.status === "fulfilled") setExpenses(e.value);
       if (p.status === "fulfilled") setProveedoras(p.value);
       if (cons.status === "fulfilled") setConsignaciones(cons.value);
@@ -622,22 +676,21 @@ export default function App() {
     setCart(prev => prev.map(i => i.id === id ? { ...i, discount: Math.max(0, discount) } : i));
   };
 
-  const checkout = async (customerName: string, customerId: number | null, status: string, paid: number, descuentoGlobalPct: number = 0) => {
+  const checkout = async (customerName: string, customerId: number | null, status: string, paid: number, descuentoGlobalMonto: number = 0) => {
   try {
     const subtotal = cart.reduce((s, i) => s + i.precio_venta * i.quantity, 0);
     const descProductos = cart.reduce((s, i) => {
       return s + ((i.discount || 0) / 100) * i.precio_venta * i.quantity;
     }, 0);
     const subtotalPostProductos = subtotal - descProductos;
-    const descGlobalMonto = (descuentoGlobalPct / 100) * subtotalPostProductos;
-    const total = Math.max(0, subtotalPostProductos - descGlobalMonto);
+    const total = Math.max(0, subtotalPostProductos - descuentoGlobalMonto);
 
     const newSale = await api.createSale({
       cliente_id: customerId,
       total,
       monto_pagado: paid,
       estado: status,
-      descuento_global: descGlobalMonto,
+      descuento_global: descuentoGlobalMonto,
       items: cart.map(i => ({
         producto_global_id: i.producto_global_id || i.id,  // ✅ FK fix
         cantidad: i.quantity,
@@ -659,6 +712,25 @@ export default function App() {
       setCart([]); setCartOpen(false);
       showToast(`✓ Venta registrada: $${total.toFixed(2)}`);
     } catch (err: any) { showToast(err.message || "Error al registrar venta", "error"); }
+  };
+
+  const deleteSale = async (saleId: string) => {
+    const numericId = saleId.replace("#V-", "");
+    try {
+      await api.deleteSale(numericId);
+      const deleted = sales.find(s => s.id === saleId);
+      if (deleted) {
+        setProducts(prev => prev.map(p => {
+          const item = deleted.items.find((i: any) => i.productId === p.id || i.name === p.nombre);
+          return item ? { ...p, stock: p.stock + item.quantity } : p;
+        }));
+      }
+      setSales(prev => prev.filter(s => s.id !== saleId));
+      setModalSaleDetail(null);
+      showToast("Venta eliminada y stock restaurado ✓");
+    } catch (err: any) {
+      showToast(err.message || "Error al eliminar venta", "error");
+    }
   };
 
   const filteredProducts = products.filter(p => {
@@ -776,16 +848,17 @@ export default function App() {
                       <thead><tr className="border-b border-gray-100" style={{ background: C.bg }}>{["ID", "Cliente", "Fecha", "Total", "Estado", "Acción"].map(h => <th key={h} className="px-5 py-3 text-xs font-bold uppercase" style={{ color: C.textSub }}>{h}</th>)}</tr></thead>
                       <tbody className="divide-y divide-gray-50">
                         {sales.map((v: Sale) => (
-                          <tr key={v.id} className="hover:bg-gray-50 transition-colors">
+                          <tr key={v.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setModalSaleDetail(v)}>
                             <td className="px-5 py-4 text-sm font-mono font-bold" style={{ color: C.primary }}>{v.id}</td>
                             <td className="px-5 py-4 text-sm font-bold" style={{ color: C.text }}>{v.customer}</td>
                             <td className="px-5 py-4 text-sm" style={{ color: C.textSub }}>{v.date}</td>
                             <td className="px-5 py-4 text-sm font-black" style={{ color: C.text }}>${v.total.toFixed(2)}</td>
                             <td className="px-5 py-4"><span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${v.status === "pagado" ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"}`}>{v.status}</span></td>
-                            <td className="px-5 py-4">
+                            <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
                               <div className="flex items-center gap-2">
-                                <button onClick={() => printThermal({ id: v.id, empresa: user?.nombre || "Farmasi", cliente: v.customer, fecha: v.date, items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price, discount: i.discount })), total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount, estado: v.status })} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500"><Printer className="w-3.5 h-3.5" /></button>
-                                <button onClick={() => downloadTxt({ id: v.id, empresa: user?.nombre || "Farmasi", cliente: v.customer, fecha: v.date, items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price, discount: i.discount })), total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount, estado: v.status })} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500"><Download className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => printThermal({ id: v.id, empresa: user?.nombre || "Farmasi", cliente: v.customer, fecha: v.date, items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price, discount: i.discount })), total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount, estado: v.status })} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500" title="Imprimir ticket"><Printer className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => downloadTxt({ id: v.id, empresa: user?.nombre || "Farmasi", cliente: v.customer, fecha: v.date, items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price, discount: i.discount })), total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount, estado: v.status })} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500" title="Descargar TXT"><Download className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => setModalSaleDetail(v)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500" title="Ver detalle"><Eye className="w-3.5 h-3.5" /></button>
                               </div>
                             </td>
                           </tr>
@@ -814,9 +887,10 @@ export default function App() {
                       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-all">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-lg" style={{ background: GRADIENT }}>{c.name.charAt(0)}</div>
-                        <div><p className="font-bold" style={{ color: C.text }}>{c.name}</p>{c.phone && <p className="text-xs" style={{ color: C.textSub }}>{c.phone}</p>}</div>
+                        <div><p className="font-bold" style={{ color: C.text }}>{c.name}</p>{c.phone && <p className="text-xs" style={{ color: C.textSub }}>{c.phone}</p>}{c.cedula && <p className="text-xs" style={{ color: C.textSub }}>CI: {c.cedula}</p>}</div>
                       </div>
                       <div className="space-y-2 text-sm">
+                        {c.email && <div className="flex justify-between"><span style={{ color: C.textSub }}>Email</span><span className="font-medium text-xs truncate max-w-[120px]" style={{ color: C.text }}>{c.email}</span></div>}
                         <div className="flex justify-between"><span style={{ color: C.textSub }}>Total compras</span><span className="font-bold" style={{ color: C.text }}>${c.totalSpent.toFixed(2)}</span></div>
                         {c.saldo_pendiente > 0 && <div className="flex justify-between"><span className="text-amber-600">Saldo pendiente</span><span className="font-bold text-amber-600">${c.saldo_pendiente.toFixed(2)}</span></div>}
                       </div>
@@ -854,11 +928,11 @@ export default function App() {
           <Route path="/gastos" element={
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <div><h1 className="text-2xl font-black" style={{ color: C.text }}>Gastos</h1><p className="text-sm mt-0.5" style={{ color: C.textSub }}>Total: ${expenses.reduce((s, e) => s + e.amount, 0).toFixed(2)}</p></div>
+                <div><h1 className="text-2xl font-black" style={{ color: C.text }}>Egresos</h1><p className="text-sm mt-0.5" style={{ color: C.textSub }}>Total: ${expenses.reduce((s, e) => s + e.amount, 0).toFixed(2)}</p></div>
                 <button onClick={() => setModalExpense(true)} className={btnPrimary} style={{ background: GRADIENT }}><Plus className="w-4 h-4" /> Registrar</button>
               </div>
               {expenses.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-2xl border border-gray-100"><TrendingDown className="w-12 h-12 mx-auto mb-3" style={{ color: C.soft }} /><p className="font-bold" style={{ color: C.text }}>Sin gastos registrados</p></div>
+                <div className="text-center py-20 bg-white rounded-2xl border border-gray-100"><TrendingDown className="w-12 h-12 mx-auto mb-3" style={{ color: C.soft }} /><p className="font-bold" style={{ color: C.text }}>Sin egresos registrados</p></div>
               ) : (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
                   {expenses.map((e: Expense) => (
@@ -950,22 +1024,28 @@ export default function App() {
       <Modal isOpen={modalCustomer} onClose={() => setModalCustomer(false)} title="Nueva Cliente">
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault(); const fd = new FormData(e.currentTarget);
-          try { const c = await api.createCustomer({ name: fd.get("name"), phone: fd.get("phone"), address: fd.get("address") }); setCustomers(p => [...p, { ...c, saldo_pendiente: 0, totalSpent: 0 }]); setModalCustomer(false); showToast("Cliente registrada ✓"); } catch (err: any) { showToast(err.message, "error"); }
+          try { 
+            const c = await api.createCustomer({ 
+              name: fd.get("name"), 
+              phone: fd.get("phone"), 
+              address: fd.get("address"),
+              email: fd.get("email"),
+              cedula: fd.get("cedula"),
+            }); 
+            setCustomers(p => [...p, { ...c, saldo_pendiente: 0, totalSpent: 0 }]); 
+            setModalCustomer(false); 
+            showToast("Cliente registrada ✓"); 
+          } catch (err: any) { showToast(err.message, "error"); }
         }}>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Nombre *</label><input name="name" required className={inputCls} /></div>
-            <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Teléfono</label><input name="phone" className={inputCls} /></div>
-          </div>
-          <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Dirección</label><input name="address" className={inputCls} /></div>
-          <button className="w-full py-3 rounded-xl text-white font-bold text-sm" style={{ background: GRADIENT }}>Guardar</button>
+          <NewClienteSRIFields />
         </form>
       </Modal>
 
       {/* ── MODAL GASTO ── */}
-      <Modal isOpen={modalExpense} onClose={() => setModalExpense(false)} title="Registrar Gasto">
+      <Modal isOpen={modalExpense} onClose={() => setModalExpense(false)} title="Registrar Egreso">
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault(); const fd = new FormData(e.currentTarget);
-          try { const g = await api.createExpense({ concept: fd.get("concept"), description: fd.get("desc"), amount: fd.get("amount"), category: fd.get("cat") }); setExpenses(p => [g, ...p]); setModalExpense(false); showToast("Gasto registrado ✓"); } catch (err: any) { showToast(err.message, "error"); }
+          try { const g = await api.createExpense({ concept: fd.get("concept"), description: fd.get("desc"), amount: fd.get("amount"), category: fd.get("cat") }); setExpenses(p => [g, ...p]); setModalExpense(false); showToast("Egreso registrado ✓"); } catch (err: any) { showToast(err.message, "error"); }
         }}>
           <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Concepto *</label><input name="concept" required className={inputCls} /></div>
           <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Descripción</label><textarea name="desc" className={`${inputCls} h-16`} /></div>
@@ -973,7 +1053,7 @@ export default function App() {
             <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Monto *</label><input name="amount" type="number" step="0.01" required className={inputCls} /></div>
             <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Categoría</label><select name="cat" className={inputCls}>{["Local", "Servicios", "Marketing", "Logística", "Suministros", "Transporte", "Otros"].map(c => <option key={c}>{c}</option>)}</select></div>
           </div>
-          <button className="w-full py-3 rounded-xl text-white font-bold text-sm bg-rose-500">Guardar Gasto</button>
+          <button className="w-full py-3 rounded-xl text-white font-bold text-sm bg-rose-500">Guardar Egreso</button>
         </form>
       </Modal>
 
@@ -987,10 +1067,11 @@ export default function App() {
             const nuevo = await api.createGlobalProduct({
               nombre_producto: formNewProduct.nombre_producto,
               categoria: formNewProduct.categoria,
-              marca: formNewProduct.marca || null,
               descripcion: formNewProduct.descripcion || null,
               imagen_url: formNewProduct.imagen_url || null,
-              codigo_base: formNewProduct.codigo_base || null,
+              precio_venta: Number(formNewProduct.precio_venta) || 0,
+              precio_compra: Number(formNewProduct.precio_compra) || 0,
+              stock: Number(formNewProduct.stock) || 0,
             });
             await loadData();
             setModalAddProduct(false);
@@ -999,37 +1080,46 @@ export default function App() {
           } catch (err: any) { showToast(err.message || "Error al crear producto", "error"); }
           finally { setSaving(false); }
         }}>
-          <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700 font-medium">
-            💡 Este producto quedará disponible para <strong>todas las empresas</strong> del sistema automáticamente.
-          </div>
           <div>
             <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Nombre del Producto *</label>
             <input value={formNewProduct.nombre_producto} onChange={e => setFormNewProduct(p => ({ ...p, nombre_producto: e.target.value }))} required className={inputCls} placeholder="Ej: Labial Matte Rosa" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Categoría *</label>
-              <select value={formNewProduct.categoria} onChange={e => setFormNewProduct(p => ({ ...p, categoria: e.target.value }))} required className={inputCls}>
-                <option value="">Seleccionar...</option>
-                {["Maquillaje", "Cuidado Piel", "Fragancias", "Cabello", "Cuerpo", "Uñas", "Otros"].map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Marca</label>
-              <input value={formNewProduct.marca} onChange={e => setFormNewProduct(p => ({ ...p, marca: e.target.value }))} className={inputCls} placeholder="Ej: Farmasi" />
-            </div>
+          <div>
+            <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Categoría *</label>
+            <select value={formNewProduct.categoria} onChange={e => setFormNewProduct(p => ({ ...p, categoria: e.target.value }))} required className={inputCls}>
+              <option value="">Seleccionar...</option>
+              {["Maquillaje", "Cuidado de Piel", "Nutrición", "Cuidados Personales", "Cabello", "Hombres"].map(c => <option key={c}>{c}</option>)}
+            </select>
           </div>
           <div>
             <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Descripción</label>
             <textarea value={formNewProduct.descripcion} onChange={e => setFormNewProduct(p => ({ ...p, descripcion: e.target.value }))} className={`${inputCls} h-20 resize-none`} placeholder="Describe el producto..." />
           </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Stock Inicial</label>
+              <input type="number" min="0" value={formNewProduct.stock} onChange={e => setFormNewProduct(p => ({ ...p, stock: e.target.value }))} className={inputCls} placeholder="0" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Precio Venta ($)</label>
+              <input type="number" min="0" step="0.01" value={formNewProduct.precio_venta} onChange={e => setFormNewProduct(p => ({ ...p, precio_venta: e.target.value }))} className={inputCls} placeholder="0.00" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Precio Costo ($)</label>
+              <input type="number" min="0" step="0.01" value={formNewProduct.precio_compra} onChange={e => setFormNewProduct(p => ({ ...p, precio_compra: e.target.value }))} className={inputCls} placeholder="0.00" />
+            </div>
+          </div>
+          {Number(formNewProduct.precio_venta) > 0 && Number(formNewProduct.precio_compra) >= 0 && (
+            <div className={`p-3 rounded-xl text-center ${Number(formNewProduct.precio_venta) > Number(formNewProduct.precio_compra) ? "bg-emerald-50" : "bg-rose-50"}`}>
+              <p className="text-xs font-medium" style={{ color: C.textSub }}>Margen por unidad</p>
+              <p className={`text-xl font-black ${Number(formNewProduct.precio_venta) > Number(formNewProduct.precio_compra) ? "text-emerald-600" : "text-rose-600"}`}>
+                ${(Number(formNewProduct.precio_venta) - Number(formNewProduct.precio_compra)).toFixed(2)}
+              </p>
+            </div>
+          )}
           <div>
             <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>URL de Imagen</label>
             <input value={formNewProduct.imagen_url} onChange={e => setFormNewProduct(p => ({ ...p, imagen_url: e.target.value }))} className={inputCls} placeholder="https://..." />
-          </div>
-          <div>
-            <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Código Base (opcional)</label>
-            <input value={formNewProduct.codigo_base} onChange={e => setFormNewProduct(p => ({ ...p, codigo_base: e.target.value }))} className={inputCls} placeholder="Se genera automático si lo dejas vacío" />
           </div>
           <button type="submit" disabled={saving} className="w-full py-3.5 rounded-xl text-white font-bold text-sm hover:opacity-90 disabled:opacity-60" style={{ background: GRADIENT }}>
             {saving ? "Guardando..." : "✨ Agregar al Catálogo"}
@@ -1169,7 +1259,69 @@ export default function App() {
         </form>
       </Modal>
 
+      {/* ── MODAL DETALLE VENTA ── */}
+      {modalSaleDetail && (
+        <Modal isOpen={!!modalSaleDetail} onClose={() => setModalSaleDetail(null)} title={`Detalle de Venta ${modalSaleDetail.id}`}>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-gray-50 rounded-xl p-3"><p className="text-xs font-bold uppercase" style={{ color: C.textSub }}>Cliente</p><p className="font-bold mt-0.5">{modalSaleDetail.customer}</p></div>
+              <div className="bg-gray-50 rounded-xl p-3"><p className="text-xs font-bold uppercase" style={{ color: C.textSub }}>Fecha</p><p className="font-bold mt-0.5">{modalSaleDetail.date}</p></div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase" style={{ color: C.textSub }}>Productos</p>
+              {modalSaleDetail.items.length === 0 ? (
+                <p className="text-sm text-gray-400">Sin detalle de productos</p>
+              ) : (
+                <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden">
+                  {modalSaleDetail.items.map((item: any, i: number) => {
+                    const descMonto = ((item.discount || 0) / 100) * item.price * item.quantity;
+                    const subtotal = item.price * item.quantity - descMonto;
+                    return (
+                      <div key={i} className="px-4 py-2.5 flex items-center justify-between text-sm">
+                        <div>
+                          <p className="font-bold" style={{ color: C.text }}>{item.name}</p>
+                          <p className="text-xs" style={{ color: C.textSub }}>{item.quantity} × ${item.price?.toFixed(2)}{item.discount > 0 ? ` (−${item.discount}%)` : ""}</p>
+                        </div>
+                        <p className="font-black" style={{ color: C.primary }}>${subtotal.toFixed(2)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 space-y-1.5">
+              <div className="flex justify-between text-sm"><span style={{ color: C.textSub }}>Total</span><span className="font-black" style={{ color: C.primary }}>${modalSaleDetail.total.toFixed(2)}</span></div>
+              <div className="flex justify-between text-sm"><span style={{ color: C.textSub }}>Pagado</span><span className="font-bold text-emerald-600">${modalSaleDetail.paidAmount.toFixed(2)}</span></div>
+              {modalSaleDetail.total - modalSaleDetail.paidAmount > 0 && (
+                <div className="flex justify-between text-sm"><span className="text-amber-600 font-bold">Pendiente</span><span className="font-bold text-amber-600">${(modalSaleDetail.total - modalSaleDetail.paidAmount).toFixed(2)}</span></div>
+              )}
+              <div className="flex justify-between text-sm pt-1 border-t border-gray-200">
+                <span style={{ color: C.textSub }}>Estado</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase ${modalSaleDetail.status === "pagado" ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"}`}>{modalSaleDetail.status}</span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => printThermal({ id: modalSaleDetail.id, empresa: user?.nombre || "Farmasi", cliente: modalSaleDetail.customer, fecha: modalSaleDetail.date, items: modalSaleDetail.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price, discount: i.discount })), total: modalSaleDetail.total, pagado: modalSaleDetail.paidAmount, pendiente: modalSaleDetail.total - modalSaleDetail.paidAmount, estado: modalSaleDetail.status })}
+                className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 flex items-center justify-center gap-2">
+                <Printer className="w-4 h-4" /> Imprimir
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm(`¿Eliminar la venta ${modalSaleDetail.id}? Esto restaurará el stock.`)) {
+                    deleteSale(modalSaleDetail.id);
+                  }
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-rose-50 border-2 border-rose-200 text-sm font-bold text-rose-600 hover:bg-rose-100 flex items-center justify-center gap-2">
+                <Trash2 className="w-4 h-4" /> Eliminar Venta
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       <AnimatePresence>{toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}</AnimatePresence>
     </Router>
   );
 }
+
