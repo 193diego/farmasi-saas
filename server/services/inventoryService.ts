@@ -1,4 +1,3 @@
-// server/services/inventoryService.ts
 import * as inventoryRepository from "../repositories/inventoryRepository.js";
 
 export const getInventory = async (companyId: number) => {
@@ -7,12 +6,11 @@ export const getInventory = async (companyId: number) => {
     id: item.id,
     nombre: item.producto.nombre_producto,
     categoria: item.producto.categoria,
+    descripcion: item.producto.descripcion,  // ✅
     stock: item.stock,
     precio_venta: item.precio_venta,
     precio_compra: item.precio_compra,
     imagen_url: item.producto.imagen_url,
-    // ✅ Descripción para búsqueda y visualización
-    descripcion: item.producto.descripcion,
   }));
 };
 

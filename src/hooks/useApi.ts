@@ -52,6 +52,12 @@ export const api = {
   getSales: () => req("GET", "/sales"),
   createSale: (data: any) => req("POST", "/sales", data),
 
+
+
+
+
+
+
   // Clientes
   getCustomers: () => req("GET", "/customers"),
   createCustomer: (data: any) => req("POST", "/customers", data),
