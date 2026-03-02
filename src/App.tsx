@@ -499,10 +499,10 @@ const DashboardPage = ({ sales, products, expenses, customers }: any) => {
     <div className="space-y-6">
       <div><h1 className="text-2xl font-black" style={{ color: C.text }}>Dashboard</h1><p className="text-sm mt-0.5" style={{ color: C.textSub }}>Resumen del negocio en tiempo real</p></div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPI title="Ventas Totales" value={`$${totalIngresos.toFixed(0)}`} icon={TrendingUp} color="primary" delay={0} trend={12} />
-        <KPI title="Ganancia Neta" value={`$${ganancia.toFixed(0)}`} icon={DollarSign} color={ganancia >= 0 ? "emerald" : "rose"} delay={0.05} />
-        <KPI title="Total Fiado" value={`$${totalFiado.toFixed(0)}`} icon={CreditCard} color="amber" delay={0.1} />
-        <KPI title="Inv. Invertido" value={`$${invValue.toFixed(0)}`} icon={Package} color="gold" delay={0.15} />
+        <KPI title="Ventas Totales" value={`$${totalIngresos.toFixed(2)}`} icon={TrendingUp} color="primary" delay={0} trend={12} />
+        <KPI title="Ganancia Neta" value={`$${ganancia.toFixed(2)}`} icon={DollarSign} color={ganancia >= 0 ? "emerald" : "rose"} delay={0.05} />
+        <KPI title="Total Fiado" value={`$${totalFiado.toFixed(2)}`} icon={CreditCard} color="amber" delay={0.1} />
+        <KPI title="Inv. Invertido" value={`$${invValue.toFixed(2)}`} icon={Package} color="gold" delay={0.15} />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
@@ -1324,4 +1324,3 @@ export default function App() {
     </Router>
   );
 }
-
