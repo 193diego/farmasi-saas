@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, CreditCard, TrendingDown,
@@ -6,7 +6,7 @@ import {
   CheckCircle2, DollarSign, BarChart3, AlertTriangle, FileText, Eye,
   UserPlus, Layers, Clock, CheckCircle, Info, TrendingUp, Calendar,
   Target, Filter, Star, Activity, Printer, Download, RefreshCw, Sparkles,
-  Heart, Flower2
+  Heart, Flower2, Search, Pencil
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -18,7 +18,7 @@ import { printThermal, downloadTxt, exportTableToPDF, exportToCSV } from "./util
 import ReportsPage from "./pages/ReportsPage";
 import SuperAdminPanel from "./pages/SuperAdminPanel";
 
-// ─── FARMASI COLORS ──────────────────────────────────────────
+// ─── FARMASI COLORS ───────────────────────────────────────────
 const C = {
   primary:   "#F45B69",
   soft:      "#FAD4D8",
@@ -39,14 +39,39 @@ const GRADIENT = `linear-gradient(135deg, ${C.primary}, #e8394a)`;
 const GRADIENT_SOFT = `linear-gradient(135deg, #fff5f6, #fff)`;
 
 // ─── TYPES ────────────────────────────────────────────────────
-interface Product { id: number; nombre: string; categoria: string; stock: number; precio_venta: number; precio_compra: number; imagen_url?: string; minStock?: number; marca?: string; description?: string; }
+interface Product {
+  id: number;
+  nombre: string;
+  categoria: string;
+  stock: number;
+  precio_venta: number;
+  precio_compra: number;
+  imagen_url?: string;
+  minStock?: number;
+  marca?: string;
+  descripcion?: string;
+}
 interface CartItem extends Product { quantity: number; discount: number; }
 interface Customer { id: number; name: string; phone?: string; address?: string; saldo_pendiente: number; totalSpent: number; lastPurchase?: string; }
 interface User { id: number; company_id: number | null; rol: string; nombre: string; email: string; token: string; }
 interface Sale { id: string; customer: string; date: string; total: number; paidAmount: number; status: string; items: Array<{ productId: number; name: string; quantity: number; price: number; discount?: number }>; }
 interface Expense { id: number; concept: string; description?: string; category: string; date: string; amount: number; }
 interface Proveedora { id: number; nombre: string; telefono?: string; email?: string; notas?: string; }
-interface ConsignacionItem { id: number; proveedora: { id: number; nombre: string }; producto: { id: number; nombre: string; imagen_url?: string }; cantidad_recibida: number; cantidad_disponible: number; cantidad_vendida: number; precio_costo: number; precio_venta_proveedora: number; precio_venta_tuyo: number; total_a_reportar_proveedora: number; tu_ganancia_total: number; estado: string; fecha_recepcion: string; }
+interface ConsignacionItem {
+  id: number;
+  proveedora: { id: number; nombre: string };
+  producto: { id: number; nombre: string; imagen_url?: string };
+  cantidad_recibida: number;
+  cantidad_disponible: number;
+  cantidad_vendida: number;
+  precio_costo: number;
+  precio_venta_proveedora: number;
+  precio_venta_tuyo: number;
+  total_a_reportar_proveedora: number;
+  tu_ganancia_total: number;
+  estado: string;
+  fecha_recepcion: string;
+}
 
 // ─── SHARED UI ────────────────────────────────────────────────
 const Modal = ({ isOpen, onClose, title, children, wide = false }: any) => (
@@ -227,21 +252,13 @@ const Layout = ({ children, user, onLogout, cartCount, onOpenCart }: any) => {
   );
 };
 
-// ─── LOGIN (CLARO, FEMENINO, ANIMADO) ────────────────────────
-
-// SVG inline: silueta femenina con flores
+// ─── LOGIN ────────────────────────────────────────────────────
 const BeautyIllustration = () => (
   <svg viewBox="0 0 320 380" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-    {/* Fondo circular suave */}
     <circle cx="160" cy="200" r="150" fill="url(#bgCircle)" opacity="0.25" />
-
-    {/* Tallo principal */}
     <path d="M160 370 Q158 300 155 260 Q152 220 160 180" stroke="#F45B69" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.6"/>
-    {/* Hojas */}
     <path d="M155 280 Q130 265 125 245 Q140 255 155 270Z" fill="#f9a8b2" opacity="0.7"/>
     <path d="M158 300 Q185 285 188 265 Q172 278 158 292Z" fill="#f9a8b2" opacity="0.7"/>
-
-    {/* Flor central grande */}
     <g transform="translate(160,150)">
       {[0,45,90,135,180,225,270,315].map((deg, i) => (
         <ellipse key={i} cx={Math.cos(deg*Math.PI/180)*22} cy={Math.sin(deg*Math.PI/180)*22}
@@ -252,8 +269,6 @@ const BeautyIllustration = () => (
       <circle cx="0" cy="0" r="14" fill="#C9A227" opacity="0.95"/>
       <circle cx="0" cy="0" r="8" fill="#fff" opacity="0.6"/>
     </g>
-
-    {/* Flor pequeña izquierda */}
     <g transform="translate(90,230)">
       {[0,60,120,180,240,300].map((deg, i) => (
         <ellipse key={i} cx={Math.cos(deg*Math.PI/180)*13} cy={Math.sin(deg*Math.PI/180)*13}
@@ -263,8 +278,6 @@ const BeautyIllustration = () => (
       ))}
       <circle cx="0" cy="0" r="8" fill="#C9A227" opacity="0.9"/>
     </g>
-
-    {/* Flor pequeña derecha */}
     <g transform="translate(230,210)">
       {[0,60,120,180,240,300].map((deg, i) => (
         <ellipse key={i} cx={Math.cos(deg*Math.PI/180)*13} cy={Math.sin(deg*Math.PI/180)*13}
@@ -274,21 +287,16 @@ const BeautyIllustration = () => (
       ))}
       <circle cx="0" cy="0" r="8" fill="#e8c44a" opacity="0.9"/>
     </g>
-
-    {/* Pétalos sueltos decorativos */}
     <ellipse cx="75" cy="160" rx="8" ry="13" transform="rotate(30 75 160)" fill="#F45B69" opacity="0.35"/>
     <ellipse cx="250" cy="170" rx="6" ry="10" transform="rotate(-20 250 170)" fill="#FAD4D8" opacity="0.5"/>
     <ellipse cx="110" cy="320" rx="5" ry="9" transform="rotate(15 110 320)" fill="#F45B69" opacity="0.3"/>
     <ellipse cx="210" cy="340" rx="7" ry="11" transform="rotate(-35 210 340)" fill="#fce4e8" opacity="0.45"/>
-
-    {/* Brillos / sparkles */}
     <g opacity="0.7">
       <path d="M60 100 L62 94 L64 100 L70 102 L64 104 L62 110 L60 104 L54 102Z" fill="#C9A227"/>
       <path d="M250 120 L252 115 L254 120 L259 122 L254 124 L252 129 L250 124 L245 122Z" fill="#F45B69"/>
       <path d="M40 270 L41.5 266 L43 270 L47 271.5 L43 273 L41.5 277 L40 273 L36 271.5Z" fill="#C9A227" opacity="0.6"/>
       <path d="M275 290 L276.5 286 L278 290 L282 291.5 L278 293 L276.5 297 L275 293 L271 291.5Z" fill="#F45B69" opacity="0.6"/>
     </g>
-
     <defs>
       <radialGradient id="bgCircle" cx="50%" cy="50%" r="50%">
         <stop offset="0%" stopColor="#F45B69"/>
@@ -323,7 +331,6 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
 
   return (
     <>
-      {/* Google Font: Playfair Display para FARMASI */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
         .font-playfair { font-family: 'Playfair Display', serif; }
@@ -338,22 +345,13 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
         .pulse-soft { animation: pulse-soft 3s ease-in-out infinite; }
         input::placeholder { color: #c9a0aa; }
       `}</style>
-
       <div className="font-dm min-h-screen flex" style={{ background: "linear-gradient(135deg, #fff5f7 0%, #fce8ed 40%, #fff0f5 70%, #fdf6f8 100%)" }}>
-
-        {/* ── Panel izquierdo decorativo ── */}
         <div className="hidden lg:flex flex-col justify-between w-[48%] relative overflow-hidden p-12"
           style={{ background: "linear-gradient(160deg, #fff0f3 0%, #fce4ea 50%, #ffd6e0 100%)" }}>
-
-          {/* Círculos decorativos de fondo */}
           <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full opacity-30"
             style={{ background: "radial-gradient(circle, #F45B69 0%, transparent 70%)" }} />
           <div className="absolute -bottom-16 -right-16 w-72 h-72 rounded-full opacity-20"
             style={{ background: "radial-gradient(circle, #C9A227 0%, transparent 70%)" }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-10"
-            style={{ background: "radial-gradient(circle, #F45B69 0%, transparent 60%)" }} />
-
-          {/* Logo top */}
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="flex items-center gap-3 z-10">
             <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg"
@@ -362,36 +360,23 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
             </div>
             <span className="font-playfair font-black text-2xl tracking-wide" style={{ color: "#F45B69" }}>FARMASI</span>
           </motion.div>
-
-          {/* Ilustración central animada */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+          <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4, type: "spring", damping: 18 }}
-            className="z-10 w-72 mx-auto pulse-soft"
-          >
+            className="z-10 w-72 mx-auto pulse-soft">
             <BeautyIllustration />
           </motion.div>
-
-          {/* Texto hero */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
             className="z-10 space-y-3">
-            <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: "#F45B69" }}>
-              ✦ Plataforma de gestión
-            </p>
+            <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: "#F45B69" }}>✦ Plataforma de gestión</p>
             <h2 className="font-playfair text-3xl font-black leading-snug" style={{ color: "#2E2E2E" }}>
-              Tu belleza,<br/>
-              <span style={{ color: "#F45B69" }}>tu negocio,</span><br/>
-              tu éxito
+              Tu belleza,<br/><span style={{ color: "#F45B69" }}>tu negocio,</span><br/>tu éxito
             </h2>
             <p className="text-sm leading-relaxed" style={{ color: "#9B6B75" }}>
               Gestiona ventas, inventario y clientes en un solo lugar diseñado para distribuidoras Farmasi.
             </p>
-
-            {/* Pills */}
             <div className="flex flex-wrap gap-2 pt-1">
               {["🌸 Ventas", "💄 Inventario", "✨ Reportes", "💛 Fiados"].map((f, i) => (
-                <motion.span key={i}
-                  initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                <motion.span key={i} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.8 + i * 0.08 }}
                   className="px-3 py-1 rounded-full text-xs font-semibold"
                   style={{ background: "rgba(244,91,105,0.1)", color: "#F45B69", border: "1px solid rgba(244,91,105,0.2)" }}>
@@ -402,50 +387,33 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
           </motion.div>
         </div>
 
-        {/* ── Panel derecho: formulario ── */}
         <div className="flex-1 flex items-center justify-center p-6 lg:p-16 relative">
-
-          {/* Pétalos flotantes decorativos */}
           <span className="absolute top-12 right-16 text-3xl float-a select-none pointer-events-none" style={{ opacity: 0.4 }}>🌸</span>
           <span className="absolute bottom-20 right-8 text-2xl float-b select-none pointer-events-none" style={{ opacity: 0.35 }}>🌺</span>
           <span className="absolute top-1/3 right-4 text-xl float-c select-none pointer-events-none" style={{ opacity: 0.3 }}>✨</span>
-          <span className="absolute bottom-1/3 left-4 lg:hidden text-2xl float-a select-none pointer-events-none" style={{ opacity: 0.3 }}>🌸</span>
 
-          <motion.div
-            initial={{ opacity: 0, y: 28, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+          <motion.div initial={{ opacity: 0, y: 28, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.25, type: "spring", damping: 22 }}
             className="w-full max-w-md"
             style={{
-              background: "rgba(255,255,255,0.85)",
-              backdropFilter: "blur(20px)",
-              borderRadius: "32px",
-              padding: "44px 40px",
+              background: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)",
+              borderRadius: "32px", padding: "44px 40px",
               boxShadow: "0 24px 64px rgba(244,91,105,0.12), 0 4px 20px rgba(0,0,0,0.06)",
               border: "1px solid rgba(244,91,105,0.15)"
-            }}
-          >
-            {/* Mobile logo */}
+            }}>
             <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
               <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-md"
                 style={{ background: "linear-gradient(135deg, #F45B69, #e8394a)" }}>
-                <span className="text-white font-black text-lg font-playfair">F</span>
+                <span className="text-white font-black text-lg">F</span>
               </div>
               <span className="font-playfair font-black text-2xl" style={{ color: "#F45B69" }}>FARMASI</span>
             </div>
-
-            {/* Greeting */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-              className="mb-8">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mb-8">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">👋</span>
-                <h2 className="font-playfair font-black text-3xl" style={{ color: "#2E2E2E" }}>
-                  ¡Bienvenida!
-                </h2>
+                <h2 className="font-playfair font-black text-3xl" style={{ color: "#2E2E2E" }}>¡Bienvenida!</h2>
               </div>
-              <p className="text-sm" style={{ color: "#9B6B75" }}>
-                Ingresa a tu panel de distribuidora Farmasi
-              </p>
+              <p className="text-sm" style={{ color: "#9B6B75" }}>Ingresa a tu panel de distribuidora Farmasi</p>
             </motion.div>
 
             <form onSubmit={submit} className="space-y-5">
@@ -458,14 +426,9 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
                   </motion.div>
                 )}
               </AnimatePresence>
-
-              {/* Email */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#9B6B75" }}>
-                  Correo electrónico
-                </label>
-                <input
-                  type="email" required value={form.email}
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#9B6B75" }}>Correo electrónico</label>
+                <input type="email" required value={form.email}
                   onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                   onFocus={() => setFocused("email")} onBlur={() => setFocused(null)}
                   placeholder="tu@email.com"
@@ -475,19 +438,12 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
                     border: `1.5px solid ${focused === "email" ? "#F45B69" : "#f9cdd4"}`,
                     color: "#2E2E2E", outline: "none", transition: "all 0.2s",
                     boxShadow: focused === "email" ? "0 0 0 3px rgba(244,91,105,0.1)" : "none",
-                    fontFamily: "'DM Sans', sans-serif"
-                  }}
-                />
+                  }} />
               </div>
-
-              {/* Password */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#9B6B75" }}>
-                  Contraseña
-                </label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#9B6B75" }}>Contraseña</label>
                 <div className="relative">
-                  <input
-                    type={showPass ? "text" : "password"} required value={form.password}
+                  <input type={showPass ? "text" : "password"} required value={form.password}
                     onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
                     onFocus={() => setFocused("pass")} onBlur={() => setFocused(null)}
                     placeholder="••••••••"
@@ -497,9 +453,7 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
                       border: `1.5px solid ${focused === "pass" ? "#F45B69" : "#f9cdd4"}`,
                       color: "#2E2E2E", outline: "none", transition: "all 0.2s",
                       boxShadow: focused === "pass" ? "0 0 0 3px rgba(244,91,105,0.1)" : "none",
-                      fontFamily: "'DM Sans', sans-serif"
-                    }}
-                  />
+                    }} />
                   <button type="button" onClick={() => setShowPass(!showPass)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
                     style={{ color: showPass ? "#F45B69" : "#c9a0aa" }}>
@@ -507,22 +461,14 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
                   </button>
                 </div>
               </div>
-
-              {/* Submit */}
-              <motion.button
-                type="submit" disabled={loading}
-                whileHover={{ scale: loading ? 1 : 1.02 }}
-                whileTap={{ scale: 0.97 }}
+              <motion.button type="submit" disabled={loading}
+                whileHover={{ scale: loading ? 1 : 1.02 }} whileTap={{ scale: 0.97 }}
                 className="w-full py-4 rounded-2xl font-bold text-white text-sm transition-all"
                 style={{
                   background: "linear-gradient(135deg, #F45B69 0%, #e8394a 100%)",
                   boxShadow: loading ? "none" : "0 8px 28px rgba(244,91,105,0.4)",
                   opacity: loading ? 0.75 : 1,
-                  fontFamily: "'DM Sans', sans-serif",
-                  letterSpacing: "0.03em",
-                  marginTop: "4px"
-                }}
-              >
+                }}>
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
                     <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
@@ -531,17 +477,12 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Ingresar a mi panel
+                    <Sparkles className="w-4 h-4" />Ingresar a mi panel
                   </span>
                 )}
               </motion.button>
             </form>
-
-            {/* Footer */}
-            <p className="text-center text-xs mt-6" style={{ color: "#D4A8B0" }}>
-              🌸 Farmasi SaaS · Hecho con amor para ti
-            </p>
+            <p className="text-center text-xs mt-6" style={{ color: "#D4A8B0" }}>🌸 Farmasi SaaS · Hecho con amor para ti</p>
           </motion.div>
         </div>
       </div>
@@ -624,7 +565,7 @@ const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, 
                             </button>
                             <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
                             <button onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                              className="w-6 h-6 rounded-lg flex items-center justify-center text-white hover:opacity-90"
+                              className="w-6 h-6 rounded-xl flex items-center justify-center text-white hover:opacity-90"
                               style={{ background: C.primary }}>
                               <Plus className="w-3 h-3" />
                             </button>
@@ -654,8 +595,7 @@ const CartDrawer = ({ items, customers, onUpdateQuantity, onRemove, onCheckout, 
                 <button onClick={checkout}
                   className="w-full py-3.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95"
                   style={{ background: GRADIENT }}>
-                  <CheckCircle2 className="w-4 h-4" />
-                  Confirmar Venta
+                  <CheckCircle2 className="w-4 h-4" />Confirmar Venta
                 </button>
               </div>
             )}
@@ -826,211 +766,15 @@ const DashboardPage = ({ sales, products, expenses, customers }: any) => {
   );
 };
 
-// ─── CATEGORÍAS FARMASI ───────────────────────────────────────
-const CATEGORIAS_FARMASI = [
-  "Maquillaje", "Cuidado Piel", "Fragancias", "Cabello",
-  "Cuidado Personal", "Suplementos", "Uñas", "Protección Solar",
-  "Hombre", "Bebé y Niños", "Otros",
-];
-
-// ─── MODAL AGREGAR / EDITAR PRODUCTO ─────────────────────────
-// El owner NO crea productos globales — eso lo hace el super_admin.
-// El owner configura: precio_venta, precio_compra, stock e imagen
-// de los productos que ya existen en su inventario (creados por super_admin).
-const ProductModal = ({ isOpen, onClose, products, onSaved, showToast }: any) => {
-  const [selectedId, setSelectedId] = useState<number | "">("");
-  const [form, setForm] = useState({ precio_venta: "", precio_compra: "", stock: "", imagen_url: "" });
-  const [saving, setSaving] = useState(false);
-  const [imgMode, setImgMode] = useState<"url" | "file">("url");
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  // Cuando selecciona un producto, pre-rellena los valores actuales
-  const selected = products.find((p: Product) => p.id === Number(selectedId));
-  useEffect(() => {
-    if (selected) {
-      setForm({
-        precio_venta: selected.precio_venta?.toString() || "",
-        precio_compra: selected.precio_compra?.toString() || "",
-        stock: selected.stock?.toString() || "",
-        imagen_url: selected.imagen_url || "",
-      });
-    } else {
-      setForm({ precio_venta: "", precio_compra: "", stock: "", imagen_url: "" });
-    }
-  }, [selectedId]);
-
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => setForm(p => ({ ...p, imagen_url: ev.target?.result as string }));
-    reader.readAsDataURL(file);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedId) return showToast("Selecciona un producto", "error");
-    if (!form.precio_venta || !form.stock) return showToast("Precio de venta y stock son obligatorios", "error");
-    setSaving(true);
-    try {
-      const updated = await api.updateProduct(Number(selectedId), {
-        precio_venta: Number(form.precio_venta),
-        precio_compra: Number(form.precio_compra) || 0,
-        stock: Number(form.stock),
-        imagen_url: form.imagen_url || null,
-      });
-      onSaved({ ...selected, ...updated });
-    } catch (err: any) {
-      showToast(err.message || "Error al actualizar", "error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Agrupar productos por categoría para el select
-  const grouped = CATEGORIAS_FARMASI.reduce((acc: any, cat) => {
-    const items = products.filter((p: Product) => p.categoria === cat);
-    if (items.length > 0) acc[cat] = items;
-    return acc;
-  }, {});
-  const sinCategoria = products.filter((p: Product) => !CATEGORIAS_FARMASI.includes(p.categoria));
-  if (sinCategoria.length > 0) grouped["Otros"] = [...(grouped["Otros"] || []), ...sinCategoria];
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Configurar Producto">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl">
-          <p className="text-xs text-blue-700 font-medium">
-            Selecciona un producto del catálogo y configura tu precio, stock e imagen.
-          </p>
-        </div>
-
-        {/* Select agrupado por categoría */}
-        <div>
-          <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>
-            Producto *
-          </label>
-          <select
-            value={selectedId}
-            onChange={e => setSelectedId(e.target.value === "" ? "" : Number(e.target.value))}
-            required className={inputCls}
-          >
-            <option value="">— Selecciona un producto —</option>
-            {Object.entries(grouped).map(([cat, items]: any) => (
-              <optgroup key={cat} label={`── ${cat}`}>
-                {items.map((p: Product) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombre} {p.stock > 0 ? `(${p.stock} en stock)` : "(sin stock)"}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </div>
-
-        {selected && (
-          <>
-            {/* Preview del producto seleccionado */}
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
-              <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0" style={{ background: C.soft }}>
-                {form.imagen_url ? (
-                  <img src={form.imagen_url} alt={selected.nombre} className="w-full h-full object-cover"
-                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                ) : (
-                  <Package className="w-6 h-6 m-3" style={{ color: C.primary }} />
-                )}
-              </div>
-              <div>
-                <p className="font-bold text-sm" style={{ color: C.text }}>{selected.nombre}</p>
-                <p className="text-xs" style={{ color: C.textSub }}>{selected.categoria}</p>
-              </div>
-            </div>
-
-            {/* Precios y stock */}
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>
-                  Precio Venta *
-                </label>
-                <input type="number" step="0.01" min="0" required
-                  value={form.precio_venta}
-                  onChange={e => setForm(p => ({ ...p, precio_venta: e.target.value }))}
-                  className={inputCls} placeholder="0.00" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>
-                  Precio Costo
-                </label>
-                <input type="number" step="0.01" min="0"
-                  value={form.precio_compra}
-                  onChange={e => setForm(p => ({ ...p, precio_compra: e.target.value }))}
-                  className={inputCls} placeholder="0.00" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>
-                  Stock
-                </label>
-                <input type="number" min="0" required
-                  value={form.stock}
-                  onChange={e => setForm(p => ({ ...p, stock: e.target.value }))}
-                  className={inputCls} placeholder="0" />
-              </div>
-            </div>
-
-            {/* Imagen */}
-            <div>
-              <label className="block text-xs font-bold uppercase mb-2" style={{ color: C.textSub }}>
-                Imagen del producto
-              </label>
-              <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-2">
-                <button type="button" onClick={() => setImgMode("url")}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${imgMode === "url" ? "bg-white shadow text-gray-800" : "text-gray-500"}`}>
-                  URL
-                </button>
-                <button type="button" onClick={() => setImgMode("file")}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${imgMode === "file" ? "bg-white shadow text-gray-800" : "text-gray-500"}`}>
-                  Subir archivo
-                </button>
-              </div>
-              {imgMode === "url" ? (
-                <input value={form.imagen_url} onChange={e => setForm(p => ({ ...p, imagen_url: e.target.value }))}
-                  className={inputCls} placeholder="https://ejemplo.com/imagen.jpg" />
-              ) : (
-                <>
-                  <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
-                  <button type="button" onClick={() => fileRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed text-sm font-bold"
-                    style={{ borderColor: C.soft, color: C.primary }}>
-                    <Download className="w-4 h-4" /> Seleccionar imagen
-                  </button>
-                </>
-              )}
-            </div>
-          </>
-        )}
-
-        <button type="submit" disabled={saving || !selectedId}
-          className="w-full py-3.5 rounded-xl text-white font-bold text-sm hover:opacity-90 disabled:opacity-50 transition-all"
-          style={{ background: GRADIENT }}>
-          {saving ? "Guardando..." : "Guardar Configuración"}
-        </button>
-      </form>
-    </Modal>
-  );
-};
-
 // ─── MAIN APP ─────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState<User | null>(() => {
     try {
       const u = localStorage.getItem("farmasi_user");
       const parsed = u ? JSON.parse(u) : null;
-      // ✅ FIX: Validar que el usuario tenga los campos mínimos necesarios
       if (!parsed?.token || !parsed?.rol) return null;
       return parsed;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   });
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -1044,51 +788,56 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
 
-  const [modals, setModals] = useState({ customer: false, expense: false, product: false, proveedora: false, consignacion: false });
-  const m = (k: string, v: boolean) => setModals(p => ({ ...p, [k]: v }));
+  // ── Modals ──
+  const [modalCustomer, setModalCustomer] = useState(false);
+  const [modalExpense, setModalExpense] = useState(false);
+  const [modalProduct, setModalProduct] = useState(false);
+  const [modalEditProduct, setModalEditProduct] = useState<Product | null>(null);
+  const [modalProveedora, setModalProveedora] = useState(false);
+  const [modalConsignacion, setModalConsignacion] = useState(false);
+
+  // ── Search ──
+  const [searchInv, setSearchInv] = useState("");
+
+  // ── Forms ──
+  const emptyProduct = { nombre: "", categoria: "", marca: "", descripcion: "", imagen_url: "", stock: "", precio_venta: "", precio_compra: "" };
+  const [formProduct, setFormProduct] = useState(emptyProduct);
+  const [formEdit, setFormEdit] = useState({ stock: "", precio_venta: "", precio_compra: "" });
+  const emptyConsig = { proveedora_id: "", producto_global_id: "", cantidad_recibida: "", precio_costo: "0", precio_venta_proveedora: "", precio_venta_tuyo: "", notas: "" };
+  const [formConsig, setFormConsig] = useState(emptyConsig);
+  const [saving, setSaving] = useState(false);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   };
 
-  // ✅ FIX CRÍTICO: loadData solo corre si el usuario existe Y NO es super_admin
-  // El super_admin NO tiene company_id, así que llamar a estas APIs causaría error 500
   const loadData = useCallback(async () => {
-    if (!user) return;
-    if (user.rol === "super_admin") return; // ← GUARD: super_admin no carga datos de empresa
-    
+    if (!user || user.rol === "super_admin") return;
     setLoading(true);
     try {
       const [inv, s, c, e, p, cons] = await Promise.allSettled([
-        api.getInventory(),
-        api.getSales(),
-        api.getCustomers(),
-        api.getExpenses(),
-        api.getProveedoras(),
-        api.getConsignaciones(),
+        api.getInventory(), api.getSales(), api.getCustomers(),
+        api.getExpenses(), api.getProveedoras(), api.getConsignaciones(),
       ]);
-
       if (inv.status === "fulfilled") {
         setProducts(inv.value.map((i: any) => ({
           id: i.id, nombre: i.nombre, categoria: i.categoria, stock: i.stock,
           precio_venta: i.precio_venta, precio_compra: i.precio_compra,
-          imagen_url: i.imagen_url, minStock: 5, marca: i.marca,
+          imagen_url: i.imagen_url, minStock: 5, marca: i.marca, descripcion: i.descripcion,
         })));
       }
       if (s.status === "fulfilled") {
         setSales(s.value.map((v: any) => ({
           id: `#V-${v.id}`, customer: v.customer, date: v.date?.split("T")[0] || v.date,
           total: v.total, paidAmount: v.paidAmount || v.monto_pagado || v.total,
-          status: v.status || v.estado,
-          items: v.items || [],
+          status: v.status || v.estado, items: v.items || [],
         })));
       }
       if (c.status === "fulfilled") {
         setCustomers(c.value.map((c: any) => ({
           id: c.id, name: c.name, phone: c.phone, address: c.address,
-          saldo_pendiente: c.saldo_pendiente || 0,
-          totalSpent: c.totalSpent || 0,
+          saldo_pendiente: c.saldo_pendiente || 0, totalSpent: c.totalSpent || 0,
           lastPurchase: c.lastPurchase,
         })));
       }
@@ -1097,9 +846,7 @@ export default function App() {
       if (cons.status === "fulfilled") setConsignaciones(cons.value);
     } catch (err) {
       console.error("Error cargando datos:", err);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, [user]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -1127,15 +874,10 @@ export default function App() {
     try {
       const total = cart.reduce((s, i) => s + i.precio_venta * i.quantity - (i.discount || 0), 0);
       const saleData = {
-        cliente_id: customerId,
-        total,
-        monto_pagado: paid,
-        estado: status,
+        cliente_id: customerId, total, monto_pagado: paid, estado: status,
         items: cart.map(i => ({
-          producto_global_id: i.id,
-          cantidad: i.quantity,
-          precio_unitario: i.precio_venta,
-          descuento: i.discount || 0,
+          producto_global_id: i.id, cantidad: i.quantity,
+          precio_unitario: i.precio_venta, descuento: i.discount || 0,
           subtotal: i.precio_venta * i.quantity - (i.discount || 0),
         }))
       };
@@ -1143,32 +885,32 @@ export default function App() {
       setSales(prev => [{
         id: `#V-${newSale.id}`, customer: customerName,
         date: new Date().toISOString().split("T")[0], total,
-        paidAmount: paid, status,
-        items: cart.map(i => ({ productId: i.id, name: i.nombre, quantity: i.quantity, price: i.precio_venta })),
+        paidAmount: paid, status, items: cart.map(i => ({ productId: i.id, name: i.nombre, quantity: i.quantity, price: i.precio_venta })),
       }, ...prev]);
-
       setProducts(prev => prev.map(p => {
         const ci = cart.find(c => c.id === p.id);
         return ci ? { ...p, stock: Math.max(0, p.stock - ci.quantity) } : p;
       }));
-
-      setCart([]);
-      setCartOpen(false);
+      setCart([]); setCartOpen(false);
       showToast(`✓ Venta registrada: $${total.toFixed(2)}`);
-    } catch (err: any) {
-      showToast(err.message || "Error al registrar venta", "error");
-    }
+    } catch (err: any) { showToast(err.message || "Error al registrar venta", "error"); }
   };
 
-  // ── Sin sesión → Login
+  // ── Filtered products ──
+  const filteredProducts = products.filter(p => {
+    const q = searchInv.toLowerCase();
+    if (!q) return true;
+    return (
+      p.nombre?.toLowerCase().includes(q) ||
+      p.descripcion?.toLowerCase().includes(q) ||
+      p.categoria?.toLowerCase().includes(q) ||
+      p.marca?.toLowerCase().includes(q)
+    );
+  });
+
   if (!user) return <LoginPage onLogin={setUser} />;
+  if (user.rol === "super_admin") return <SuperAdminPanel user={user} onLogout={logout} />;
 
-  // ✅ Super admin → su propio panel INMEDIATAMENTE, sin cargar datos de empresa
-  if (user.rol === "super_admin") {
-    return <SuperAdminPanel user={user} onLogout={logout} />;
-  }
-
-  // ── Owner / Empleado → App normal de ventas
   return (
     <Router>
       <Layout user={user} onLogout={logout} cartCount={cart.length} onOpenCart={() => setCartOpen(true)}>
@@ -1177,37 +919,65 @@ export default function App() {
             <DashboardPage sales={sales} products={products} expenses={expenses} customers={customers} />
           } />
 
+          {/* ── INVENTARIO ── */}
           <Route path="/inventario" element={
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                   <h1 className="text-2xl font-black" style={{ color: C.text }}>Inventario</h1>
-                  <p className="text-sm mt-0.5" style={{ color: C.textSub }}>{products.length} productos · {products.filter(p => p.stock === 0).length} agotados</p>
+                  <p className="text-sm mt-0.5" style={{ color: C.textSub }}>
+                    {products.length} productos · {products.filter(p => p.stock === 0).length} agotados
+                  </p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={loadData} className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50"><RefreshCw className="w-4 h-4 text-gray-500" /></button>
-                  <button onClick={() => m("product", true)} className={btnPrimary} style={{ background: GRADIENT }}>
-                    <Plus className="w-4 h-4" /> Agregar
+                  <button onClick={loadData} className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
+                    <RefreshCw className="w-4 h-4 text-gray-500" />
                   </button>
-                </div>
-              </div>
-              {loading ? (
-                <div className="text-center py-16" style={{ color: C.gray400 }}>
-                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: C.primary, borderTopColor: "transparent" }} />
-                  <p className="text-sm">Cargando inventario...</p>
-                </div>
-              ) : products.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
-                  <Package className="w-12 h-12 mx-auto mb-3" style={{ color: C.soft }} />
-                  <p className="font-bold" style={{ color: C.text }}>Sin productos en inventario</p>
-                  <p className="text-sm mt-1" style={{ color: C.textSub }}>Agrega tu primer producto para comenzar</p>
-                  <button onClick={() => m("product", true)} className={`${btnPrimary} mx-auto mt-4`} style={{ background: GRADIENT }}>
+                  <button onClick={() => setModalProduct(true)}
+                    className={btnPrimary} style={{ background: GRADIENT }}>
                     <Plus className="w-4 h-4" /> Agregar Producto
                   </button>
                 </div>
+              </div>
+
+              {/* ✅ BARRA DE BÚSQUEDA */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text" value={searchInv}
+                  onChange={e => setSearchInv(e.target.value)}
+                  placeholder="Buscar por nombre, descripción, categoría o marca..."
+                  className="w-full pl-11 pr-10 py-3 rounded-2xl border border-gray-200 bg-white text-sm outline-none focus:border-[#F45B69] transition-colors shadow-sm"
+                />
+                {searchInv && (
+                  <button onClick={() => setSearchInv("")}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {searchInv && (
+                <p className="text-xs -mt-2" style={{ color: C.textSub }}>
+                  {filteredProducts.length} resultado{filteredProducts.length !== 1 ? "s" : ""} para <strong>"{searchInv}"</strong>
+                </p>
+              )}
+
+              {loading ? (
+                <div className="text-center py-16">
+                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3"
+                    style={{ borderColor: C.primary, borderTopColor: "transparent" }} />
+                  <p className="text-sm" style={{ color: C.textSub }}>Cargando inventario...</p>
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+                  <Package className="w-12 h-12 mx-auto mb-3" style={{ color: C.soft }} />
+                  <p className="font-bold" style={{ color: C.text }}>
+                    {searchInv ? `Sin resultados para "${searchInv}"` : "Sin productos en inventario"}
+                  </p>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {products.map((p, i) => (
+                  {filteredProducts.map((p, i) => (
                     <motion.div key={p.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.03 }}
                       className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group">
@@ -1220,25 +990,52 @@ export default function App() {
                             <Package className="w-10 h-10" style={{ color: C.primary }} />
                           </div>
                         )}
-                        <span className={`absolute top-2 right-2 text-[10px] font-bold px-2 py-1 rounded-full ${p.stock === 0 ? "bg-rose-500 text-white" : p.stock <= (p.minStock || 5) ? "bg-amber-400 text-white" : "bg-emerald-400 text-white"}`}>
+                        <span className={`absolute top-2 right-2 text-[10px] font-bold px-2 py-1 rounded-full ${p.stock === 0 ? "bg-rose-500 text-white" : p.stock <= 5 ? "bg-amber-400 text-white" : "bg-emerald-400 text-white"}`}>
                           {p.stock === 0 ? "Agotado" : `${p.stock} uds`}
                         </span>
+                        {/* ✅ LÁPIZ en hover sobre imagen */}
+                        <button
+                          onClick={() => {
+                            setModalEditProduct(p);
+                            setFormEdit({ stock: String(p.stock), precio_venta: String(p.precio_venta), precio_compra: String(p.precio_compra) });
+                          }}
+                          className="absolute top-2 left-2 w-8 h-8 bg-white rounded-xl flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
+                          title="Editar producto">
+                          <Pencil className="w-3.5 h-3.5" style={{ color: C.primary }} />
+                        </button>
                       </div>
                       <div className="p-4">
                         <p className="font-bold text-sm truncate" style={{ color: C.text }}>{p.nombre}</p>
-                        <p className="text-xs mt-0.5" style={{ color: C.textSub }}>{p.categoria} {p.marca ? `· ${p.marca}` : ""}</p>
+                        <p className="text-xs mt-0.5" style={{ color: C.textSub }}>{p.categoria}{p.marca ? ` · ${p.marca}` : ""}</p>
+                        {/* ✅ DESCRIPCIÓN */}
+                        {p.descripcion && (
+                          <p className="text-[11px] mt-1 text-gray-400 line-clamp-2 leading-relaxed">{p.descripcion}</p>
+                        )}
                         <div className="flex items-center justify-between mt-3">
                           <div>
                             <p className="text-lg font-black" style={{ color: C.primary }}>${p.precio_venta.toFixed(2)}</p>
                             <p className="text-[10px]" style={{ color: C.gray400 }}>Costo: ${p.precio_compra.toFixed(2)}</p>
                           </div>
-                          {p.stock > 0 && (
-                            <button onClick={() => addToCart(p)}
-                              className="px-3 py-2 rounded-xl text-white text-xs font-bold transition-all hover:opacity-90 active:scale-95"
-                              style={{ background: GRADIENT }}>
-                              + Carrito
+                          <div className="flex gap-1.5">
+                            {/* ✅ BOTÓN LÁPIZ siempre visible */}
+                            <button
+                              onClick={() => {
+                                setModalEditProduct(p);
+                                setFormEdit({ stock: String(p.stock), precio_venta: String(p.precio_venta), precio_compra: String(p.precio_compra) });
+                              }}
+                              className="p-2 rounded-xl border-2 hover:bg-pink-50 transition-colors"
+                              style={{ borderColor: C.soft }}
+                              title="Editar">
+                              <Pencil className="w-3.5 h-3.5" style={{ color: C.primary }} />
                             </button>
-                          )}
+                            {p.stock > 0 && (
+                              <button onClick={() => addToCart(p)}
+                                className="px-3 py-2 rounded-xl text-white text-xs font-bold transition-all hover:opacity-90 active:scale-95"
+                                style={{ background: GRADIENT }}>
+                                + Carrito
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </motion.div>
@@ -1248,6 +1045,7 @@ export default function App() {
             </div>
           } />
 
+          {/* ── VENTAS ── */}
           <Route path="/ventas" element={
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1269,12 +1067,9 @@ export default function App() {
                     <table className="w-full text-left">
                       <thead>
                         <tr className="border-b border-gray-100" style={{ background: C.bg }}>
-                          <th className="px-5 py-3 text-xs font-bold uppercase" style={{ color: C.textSub }}>ID</th>
-                          <th className="px-5 py-3 text-xs font-bold uppercase" style={{ color: C.textSub }}>Cliente</th>
-                          <th className="px-5 py-3 text-xs font-bold uppercase" style={{ color: C.textSub }}>Fecha</th>
-                          <th className="px-5 py-3 text-xs font-bold uppercase" style={{ color: C.textSub }}>Total</th>
-                          <th className="px-5 py-3 text-xs font-bold uppercase" style={{ color: C.textSub }}>Estado</th>
-                          <th className="px-5 py-3 text-xs font-bold uppercase" style={{ color: C.textSub }}>Acción</th>
+                          {["ID", "Cliente", "Fecha", "Total", "Estado", "Acción"].map(h => (
+                            <th key={h} className="px-5 py-3 text-xs font-bold uppercase" style={{ color: C.textSub }}>{h}</th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
@@ -1292,24 +1087,12 @@ export default function App() {
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-2">
                                 <button title="Imprimir ticket"
-                                  onClick={() => printThermal({
-                                    id: v.id, empresa: user?.nombre || "Farmasi",
-                                    cliente: v.customer, fecha: v.date,
-                                    items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price })),
-                                    total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount,
-                                    estado: v.status,
-                                  })}
+                                  onClick={() => printThermal({ id: v.id, empresa: user?.nombre || "Farmasi", cliente: v.customer, fecha: v.date, items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price })), total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount, estado: v.status })}
                                   className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700">
                                   <Printer className="w-3.5 h-3.5" />
                                 </button>
                                 <button title="Descargar TXT"
-                                  onClick={() => downloadTxt({
-                                    id: v.id, empresa: user?.nombre || "Farmasi",
-                                    cliente: v.customer, fecha: v.date,
-                                    items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price })),
-                                    total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount,
-                                    estado: v.status,
-                                  })}
+                                  onClick={() => downloadTxt({ id: v.id, empresa: user?.nombre || "Farmasi", cliente: v.customer, fecha: v.date, items: v.items.map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price })), total: v.total, pagado: v.paidAmount, pendiente: v.total - v.paidAmount, estado: v.status })}
                                   className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700">
                                   <Download className="w-3.5 h-3.5" />
                                 </button>
@@ -1325,6 +1108,7 @@ export default function App() {
             </div>
           } />
 
+          {/* ── CLIENTES ── */}
           <Route path="/clientes" element={
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1332,7 +1116,7 @@ export default function App() {
                   <h1 className="text-2xl font-black" style={{ color: C.text }}>Clientes</h1>
                   <p className="text-sm mt-0.5" style={{ color: C.textSub }}>{customers.length} clientes registradas</p>
                 </div>
-                <button onClick={() => m("customer", true)} className={btnPrimary} style={{ background: GRADIENT }}>
+                <button onClick={() => setModalCustomer(true)} className={btnPrimary} style={{ background: GRADIENT }}>
                   <UserPlus className="w-4 h-4" /> Nueva Cliente
                 </button>
               </div>
@@ -1340,7 +1124,7 @@ export default function App() {
                 <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
                   <Users className="w-12 h-12 mx-auto mb-3" style={{ color: C.soft }} />
                   <p className="font-bold" style={{ color: C.text }}>Sin clientes registradas</p>
-                  <button onClick={() => m("customer", true)} className={`${btnPrimary} mx-auto mt-4`} style={{ background: GRADIENT }}>
+                  <button onClick={() => setModalCustomer(true)} className={`${btnPrimary} mx-auto mt-4`} style={{ background: GRADIENT }}>
                     <Plus className="w-4 h-4" /> Agregar Cliente
                   </button>
                 </div>
@@ -1377,6 +1161,7 @@ export default function App() {
             </div>
           } />
 
+          {/* ── FIADOS ── */}
           <Route path="/fiados" element={
             <div className="space-y-6">
               <div>
@@ -1413,6 +1198,7 @@ export default function App() {
             </div>
           } />
 
+          {/* ── GASTOS ── */}
           <Route path="/gastos" element={
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1422,7 +1208,7 @@ export default function App() {
                     Total: ${expenses.reduce((s, e) => s + e.amount, 0).toFixed(2)}
                   </p>
                 </div>
-                <button onClick={() => m("expense", true)} className={btnPrimary} style={{ background: GRADIENT }}>
+                <button onClick={() => setModalExpense(true)} className={btnPrimary} style={{ background: GRADIENT }}>
                   <Plus className="w-4 h-4" /> Registrar
                 </button>
               </div>
@@ -1448,6 +1234,7 @@ export default function App() {
             </div>
           } />
 
+          {/* ── CONSIGNACIÓN ── */}
           <Route path="/consignacion" element={
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1456,10 +1243,12 @@ export default function App() {
                   <p className="text-sm mt-0.5" style={{ color: C.textSub }}>Productos de otras distribuidoras Farmasi</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => m("proveedora", true)} className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5">
+                  <button onClick={() => setModalProveedora(true)}
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5">
                     <UserPlus className="w-4 h-4" /> Proveedora
                   </button>
-                  <button onClick={() => m("consignacion", true)} className={btnPrimary} style={{ background: GRADIENT }}>
+                  <button onClick={() => { setFormConsig(emptyConsig); setModalConsignacion(true); }}
+                    className={btnPrimary} style={{ background: GRADIENT }}>
                     <Plus className="w-4 h-4" /> Consignación
                   </button>
                 </div>
@@ -1546,11 +1335,11 @@ export default function App() {
           <Route path="/reportes" element={
             <ReportsPage sales={sales} products={products} expenses={expenses} customers={customers} />
           } />
-
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Layout>
 
+      {/* FAB carrito */}
       {cart.length > 0 && !cartOpen && (
         <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} whileTap={{ scale: 0.95 }}
           onClick={() => setCartOpen(true)}
@@ -1568,14 +1357,15 @@ export default function App() {
         onRemove={(id: number) => setCart(p => p.filter(i => i.id !== id))}
         onCheckout={checkout} empresa={user?.nombre || "Farmasi"} />
 
-      <Modal isOpen={modals.customer} onClose={() => m("customer", false)} title="Nueva Cliente">
+      {/* ── MODAL NUEVA CLIENTE ── */}
+      <Modal isOpen={modalCustomer} onClose={() => setModalCustomer(false)} title="Nueva Cliente">
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);
           try {
             const c = await api.createCustomer({ name: fd.get("name"), phone: fd.get("phone"), address: fd.get("address") });
             setCustomers(p => [...p, { ...c, saldo_pendiente: 0, totalSpent: 0 }]);
-            m("customer", false);
+            setModalCustomer(false);
             showToast("Cliente registrada ✓");
           } catch (err: any) { showToast(err.message, "error"); }
         }}>
@@ -1591,14 +1381,15 @@ export default function App() {
         </form>
       </Modal>
 
-      <Modal isOpen={modals.expense} onClose={() => m("expense", false)} title="Registrar Gasto">
+      {/* ── MODAL GASTO ── */}
+      <Modal isOpen={modalExpense} onClose={() => setModalExpense(false)} title="Registrar Gasto">
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);
           try {
             const g = await api.createExpense({ concept: fd.get("concept"), description: fd.get("desc"), amount: fd.get("amount"), category: fd.get("cat") });
             setExpenses(p => [g, ...p]);
-            m("expense", false);
+            setModalExpense(false);
             showToast("Gasto registrado ✓");
           } catch (err: any) { showToast(err.message, "error"); }
         }}>
@@ -1618,27 +1409,117 @@ export default function App() {
         </form>
       </Modal>
 
-      {/* ─── MODAL AGREGAR / EDITAR PRODUCTO ───────────────────── */}
-      <ProductModal
-        isOpen={modals.product}
-        onClose={() => m("product", false)}
-        products={products}
-        onSaved={(updated: Product) => {
-          setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
-          m("product", false);
-          showToast("Producto actualizado ✓");
-        }}
-        showToast={showToast}
-      />
+      {/* ── ✅ MODAL AGREGAR PRODUCTO (explicativo) ── */}
+      <Modal isOpen={modalProduct} onClose={() => setModalProduct(false)} title="📦 Agregar Stock al Inventario">
+        <div className="space-y-4">
+          <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl text-sm text-blue-700">
+            <p className="font-bold mb-1">💡 ¿Cómo funciona el inventario?</p>
+            <p>Todos los productos del catálogo Farmasi ya aparecen en tu inventario con stock 0. Solo necesitas actualizar el stock y precios.</p>
+          </div>
+          <div className="p-4 bg-pink-50 border border-pink-100 rounded-2xl text-sm" style={{ color: C.primary }}>
+            <p className="font-bold mb-1">✏️ Para editar un producto:</p>
+            <p>Haz clic en el <strong>lápiz</strong> que aparece en cada tarjeta del inventario. Ahí puedes cambiar el stock, precio de venta y precio de costo.</p>
+          </div>
+          <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm text-gray-600">
+            <p className="font-bold mb-1" style={{ color: C.text }}>¿No ves el producto que buscas?</p>
+            <p>Pídele al <strong>Super Admin</strong> que lo agregue al catálogo global. Aparecerá automáticamente aquí.</p>
+          </div>
+          <button onClick={() => setModalProduct(false)}
+            className="w-full py-3 rounded-xl font-bold text-sm text-white" style={{ background: GRADIENT }}>
+            Entendido 👍
+          </button>
+        </div>
+      </Modal>
 
-      <Modal isOpen={modals.proveedora} onClose={() => m("proveedora", false)} title="Nueva Proveedora">
+      {/* ── ✅ MODAL EDITAR PRODUCTO ── */}
+      <Modal isOpen={!!modalEditProduct} onClose={() => setModalEditProduct(null)}
+        title={`✏️ Editar: ${modalEditProduct?.nombre || ""}`}>
+        <form className="space-y-4" onSubmit={async (e) => {
+          e.preventDefault();
+          if (!modalEditProduct) return;
+          setSaving(true);
+          try {
+            const updated = await api.updateInventoryItem(modalEditProduct.id, {
+              stock: Number(formEdit.stock),
+              precio_venta: Number(formEdit.precio_venta),
+              precio_compra: Number(formEdit.precio_compra),
+            });
+            setProducts(prev => prev.map(p =>
+              p.id === modalEditProduct.id
+                ? { ...p, stock: updated.stock ?? Number(formEdit.stock), precio_venta: updated.precio_venta ?? Number(formEdit.precio_venta), precio_compra: updated.precio_compra ?? Number(formEdit.precio_compra) }
+                : p
+            ));
+            setModalEditProduct(null);
+            showToast(`✓ ${modalEditProduct.nombre} actualizado`);
+          } catch (err: any) { showToast(err.message || "Error al actualizar", "error"); }
+          finally { setSaving(false); }
+        }}>
+          {/* Info producto */}
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
+            {modalEditProduct?.imagen_url ? (
+              <img src={modalEditProduct.imagen_url} alt="" className="w-12 h-12 rounded-xl object-cover"
+                onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            ) : (
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: C.soft }}>
+                <Package className="w-6 h-6" style={{ color: C.primary }} />
+              </div>
+            )}
+            <div>
+              <p className="font-bold text-sm" style={{ color: C.text }}>{modalEditProduct?.nombre}</p>
+              <p className="text-xs" style={{ color: C.textSub }}>
+                {modalEditProduct?.categoria}{modalEditProduct?.marca ? ` · ${modalEditProduct.marca}` : ""}
+              </p>
+              {modalEditProduct?.descripcion && (
+                <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{modalEditProduct.descripcion}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Stock (unidades)</label>
+            <input type="number" min="0" value={formEdit.stock}
+              onChange={e => setFormEdit(p => ({ ...p, stock: e.target.value }))}
+              className={inputCls} placeholder="0" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Precio Venta ($)</label>
+              <input type="number" min="0" step="0.01" value={formEdit.precio_venta}
+                onChange={e => setFormEdit(p => ({ ...p, precio_venta: e.target.value }))}
+                className={inputCls} placeholder="0.00" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Precio Costo ($)</label>
+              <input type="number" min="0" step="0.01" value={formEdit.precio_compra}
+                onChange={e => setFormEdit(p => ({ ...p, precio_compra: e.target.value }))}
+                className={inputCls} placeholder="0.00" />
+            </div>
+          </div>
+          {Number(formEdit.precio_venta) > 0 && Number(formEdit.precio_compra) >= 0 && (
+            <div className={`p-3 rounded-xl text-center ${Number(formEdit.precio_venta) > Number(formEdit.precio_compra) ? "bg-emerald-50" : "bg-rose-50"}`}>
+              <p className="text-xs font-medium" style={{ color: C.textSub }}>Margen por unidad</p>
+              <p className={`text-xl font-black ${Number(formEdit.precio_venta) > Number(formEdit.precio_compra) ? "text-emerald-600" : "text-rose-600"}`}>
+                ${(Number(formEdit.precio_venta) - Number(formEdit.precio_compra)).toFixed(2)}
+              </p>
+            </div>
+          )}
+          <button type="submit" disabled={saving}
+            className="w-full py-3.5 rounded-xl text-white font-bold text-sm hover:opacity-90 disabled:opacity-60"
+            style={{ background: GRADIENT }}>
+            {saving ? "Guardando..." : "💾 Guardar Cambios"}
+          </button>
+        </form>
+      </Modal>
+
+      {/* ── MODAL PROVEEDORA ── */}
+      <Modal isOpen={modalProveedora} onClose={() => setModalProveedora(false)} title="Nueva Proveedora">
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);
           try {
             const p = await api.createProveedora({ nombre: fd.get("nombre"), telefono: fd.get("tel"), email: fd.get("email"), notas: fd.get("notas") });
             setProveedoras(prev => [...prev, p]);
-            m("proveedora", false);
+            setModalProveedora(false);
             showToast("Proveedora agregada ✓");
           } catch (err: any) { showToast(err.message, "error"); }
         }}>
@@ -1653,6 +1534,115 @@ export default function App() {
           <div><label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Notas</label>
             <textarea name="notas" className={`${inputCls} h-16`} /></div>
           <button className="w-full py-3 rounded-xl text-white font-bold text-sm" style={{ background: GRADIENT }}>Guardar Proveedora</button>
+        </form>
+      </Modal>
+
+      {/* ── ✅ MODAL CONSIGNACIÓN COMPLETO ── */}
+      <Modal isOpen={modalConsignacion} onClose={() => setModalConsignacion(false)} title="📦 Nueva Consignación">
+        <form className="space-y-4" onSubmit={async (e) => {
+          e.preventDefault();
+          if (!formConsig.proveedora_id) { showToast("Selecciona una proveedora", "error"); return; }
+          if (!formConsig.producto_global_id) { showToast("Selecciona un producto", "error"); return; }
+          if (!formConsig.cantidad_recibida || Number(formConsig.cantidad_recibida) < 1) { showToast("Ingresa una cantidad válida", "error"); return; }
+          setSaving(true);
+          try {
+            const payload = {
+              proveedora_id: Number(formConsig.proveedora_id),
+              producto_global_id: Number(formConsig.producto_global_id),
+              cantidad_recibida: Number(formConsig.cantidad_recibida),
+              precio_costo: Number(formConsig.precio_costo) || 0,
+              precio_venta_proveedora: Number(formConsig.precio_venta_proveedora),
+              precio_venta_tuyo: Number(formConsig.precio_venta_tuyo),
+              notas: formConsig.notas || "",
+            };
+            const nueva = await api.createConsignacion(payload);
+            setConsignaciones(prev => [nueva, ...prev]);
+            setModalConsignacion(false);
+            setFormConsig(emptyConsig);
+            showToast("✓ Consignación registrada");
+          } catch (err: any) {
+            showToast(err.message || "Error al registrar consignación", "error");
+          } finally { setSaving(false); }
+        }}>
+          {proveedoras.length === 0 && (
+            <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-700 font-medium">
+              ⚠️ Debes agregar una proveedora primero. Cierra este modal y usa el botón "Proveedora".
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Proveedora *</label>
+            <select value={formConsig.proveedora_id}
+              onChange={e => setFormConsig(p => ({ ...p, proveedora_id: e.target.value }))}
+              required className={inputCls}>
+              <option value="">Seleccionar proveedora...</option>
+              {proveedoras.map((p: Proveedora) => (
+                <option key={p.id} value={p.id}>{p.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Producto *</label>
+            <select value={formConsig.producto_global_id}
+              onChange={e => setFormConsig(p => ({ ...p, producto_global_id: e.target.value }))}
+              required className={inputCls}>
+              <option value="">Seleccionar producto del catálogo...</option>
+              {products.map((p: Product) => (
+                <option key={p.id} value={p.id}>{p.nombre}{p.categoria ? ` — ${p.categoria}` : ""}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Cantidad Recibida *</label>
+            <input type="number" min="1" value={formConsig.cantidad_recibida}
+              onChange={e => setFormConsig(p => ({ ...p, cantidad_recibida: e.target.value }))}
+              required className={inputCls} placeholder="Ej: 10" />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-bold uppercase mb-1" style={{ color: C.textSub }}>P. Costo</label>
+              <input type="number" min="0" step="0.01" value={formConsig.precio_costo}
+                onChange={e => setFormConsig(p => ({ ...p, precio_costo: e.target.value }))}
+                className={inputCls} placeholder="0.00" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase mb-1" style={{ color: C.textSub }}>P. Proveedora *</label>
+              <input type="number" min="0" step="0.01" required value={formConsig.precio_venta_proveedora}
+                onChange={e => setFormConsig(p => ({ ...p, precio_venta_proveedora: e.target.value }))}
+                className={inputCls} placeholder="0.00" />
+              <p className="text-[10px] mt-0.5 text-gray-400">Lo que le debes</p>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase mb-1" style={{ color: C.textSub }}>Tu Precio *</label>
+              <input type="number" min="0" step="0.01" required value={formConsig.precio_venta_tuyo}
+                onChange={e => setFormConsig(p => ({ ...p, precio_venta_tuyo: e.target.value }))}
+                className={inputCls} placeholder="0.00" />
+              <p className="text-[10px] mt-0.5 text-gray-400">Lo que tú cobras</p>
+            </div>
+          </div>
+
+          {Number(formConsig.precio_venta_tuyo) > 0 && Number(formConsig.precio_venta_proveedora) > 0 && (
+            <div className={`p-3 rounded-xl text-sm font-bold text-center ${Number(formConsig.precio_venta_tuyo) >= Number(formConsig.precio_venta_proveedora) ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+              {Number(formConsig.precio_venta_tuyo) >= Number(formConsig.precio_venta_proveedora) ? "✅" : "⚠️"} Ganancia por unidad: ${(Number(formConsig.precio_venta_tuyo) - Number(formConsig.precio_venta_proveedora)).toFixed(2)}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-bold uppercase mb-1.5" style={{ color: C.textSub }}>Notas (opcional)</label>
+            <textarea value={formConsig.notas}
+              onChange={e => setFormConsig(p => ({ ...p, notas: e.target.value }))}
+              className={`${inputCls} h-16 resize-none`}
+              placeholder="Observaciones, acuerdos, etc..." />
+          </div>
+
+          <button type="submit" disabled={saving || proveedoras.length === 0}
+            className="w-full py-3.5 rounded-xl text-white font-bold text-sm hover:opacity-90 disabled:opacity-60 transition-all"
+            style={{ background: GRADIENT }}>
+            {saving ? "Registrando..." : "📦 Registrar Consignación"}
+          </button>
         </form>
       </Modal>
 
